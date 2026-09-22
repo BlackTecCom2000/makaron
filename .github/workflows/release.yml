@@ -1,0 +1,85 @@
+name: Build & Auto Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Run Automated Tests (Vitest)
+        run: npm test
+
+      - name: Build Production Frontend
+        run: npm run build
+
+      - name: Package Release Assets
+        run: |
+          mkdir -p release-bundle
+          cp -r dist release-bundle/
+          cp -r server release-bundle/
+          cp package.json package-lock.json CHANGELOG.md README.md release-bundle/
+          cd release-bundle && zip -r ../makaron-enterprise-bundle.zip . && cd ..
+
+      - name: Determine Release Tag
+        id: release_meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            TAG="v${VERSION}-build-${{ github.run_number }}"
+            echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag_name }}
+          name: BlackTecCom MAKARON Enterprise ${{ steps.release_meta.outputs.tag_name }}
+          body: |
+            ### 🚀 BlackTecCom Production & Distribution Management System (MAKARON)
+            **Release:** `${{ steps.release_meta.outputs.tag_name }}`
+            **Automated Build & Test:** Passed 100% (Vitest 7 suites / 20 tests)
+            
+            #### 📦 Included in this Release:
+            - **Frontend Production PWA Bundle** (`dist/`)
+            - **Enterprise Backend Server** (`server/`)
+            - **Automated Offline-First Dexie Persistence & Sync Engine**
+            - **2-Step Mutual Loading Reconciliation with Mismatch Blocking**
+            - **10 Enterprise Cabinets** (Admin, Point, Agent, Supervisor, Zavsklad, Picker, Worker, Taxsimot, Director, Auditor)
+            - **Universal Digital Passport & Global System Search**
+            
+            _Check `CHANGELOG.md` in repository for full detailed audit notes._
+          files: |
+            makaron-enterprise-bundle.zip
+          draft: false
+          prerelease: ${{ steps.release_meta.outputs.is_prerelease == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

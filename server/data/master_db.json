@@ -1,0 +1,777 @@
+{
+  "users": [
+    {
+      "id": "usr-admin",
+      "username": "admin",
+      "passwordHash": "admin123",
+      "fullName": "Ином Султонов",
+      "role": "ADMIN",
+      "phone": "+992900000001"
+    },
+    {
+      "id": "usr-point-1",
+      "username": "point_01",
+      "passwordHash": "point123",
+      "fullName": "Сайида Точка-1",
+      "role": "POINT",
+      "pointId": "pt-01",
+      "phone": "+992900000002"
+    },
+    {
+      "id": "usr-agent-1",
+      "username": "agent_bahrom",
+      "passwordHash": "agent123",
+      "fullName": "Бахром Умаров",
+      "role": "AGENT",
+      "agentId": "ag-01",
+      "phone": "+992900000003"
+    },
+    {
+      "id": "usr-sup-1",
+      "username": "supervisor_rustam",
+      "passwordHash": "sup123",
+      "fullName": "Рустам Исмоилов",
+      "role": "SUPERVISOR",
+      "phone": "+992900000004"
+    },
+    {
+      "id": "usr-zav-1",
+      "username": "zavsklad_alim",
+      "passwordHash": "zav123",
+      "fullName": "Алим Кодиров",
+      "role": "ZAVSKLAD",
+      "phone": "+992900000005"
+    },
+    {
+      "id": "usr-wrk-1",
+      "username": "worker_davron",
+      "passwordHash": "wrk123",
+      "fullName": "Даврон Мирзоев",
+      "role": "WORKER",
+      "phone": "+992900000006"
+    },
+    {
+      "id": "usr-drv-1",
+      "username": "driver_farrukh",
+      "passwordHash": "drv123",
+      "fullName": "Фаррух Доставка",
+      "role": "TAXSIMOT",
+      "phone": "+992900000007"
+    },
+    {
+      "id": "usr-dir-1",
+      "username": "director_somon",
+      "passwordHash": "dir123",
+      "fullName": "Сомон Рахимов",
+      "role": "DIRECTOR",
+      "phone": "+992900000008"
+    },
+    {
+      "id": "usr-aud-1",
+      "username": "auditor_safia",
+      "passwordHash": "aud123",
+      "fullName": "Сафия Назарова",
+      "role": "AUDITOR",
+      "phone": "+992900000009"
+    },
+    {
+      "id": "usr-pck-1",
+      "username": "picker_sobir",
+      "passwordHash": "pck123",
+      "fullName": "Собир Комплектовщик",
+      "role": "PICKER",
+      "phone": "+992900000010"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord-001",
+      "orderNumber": "ORD-2026-001",
+      "supplyMode": "MODE_1_POINT",
+      "pointId": "pt-01",
+      "status": "RETURNED",
+      "items": [
+        {
+          "productId": "prod-01",
+          "productName": "Спагетти Экстра 400г",
+          "quantity": 500,
+          "price": 6.5,
+          "weightPerUnitKg": 0.4,
+          "approvedQuantity": 400
+        },
+        {
+          "productId": "prod-02",
+          "productName": "Рожки Традиционные 1кг",
+          "quantity": 300,
+          "price": 12,
+          "weightPerUnitKg": 1
+        }
+      ],
+      "totalWeightKg": 160,
+      "totalSum": 2600,
+      "currency": "TJS",
+      "notes": "Срочная утренняя поставка",
+      "createdAt": "2026-09-22T20:18:46.063Z",
+      "updatedAt": "2026-09-22T20:39:55.643Z",
+      "version": 3
+    }
+  ],
+  "warehouseAdjustments": [
+    {
+      "id": "adj-1790109546662-lv5w",
+      "orderId": "ord-001",
+      "orderNumber": "ORD-2026-001",
+      "productId": "prod-01",
+      "productName": "Спагетти Экстра 400г",
+      "requestedQuantity": 500,
+      "approvedQuantity": 400,
+      "deltaQuantity": -100,
+      "deltaWeightKg": -40,
+      "reasonCode": "DEFICIT",
+      "comment": "??????? ???? ??????? ????? ?? ??????, ??????? ?? 100 ??",
+      "createdByUserId": "usr-zav-1",
+      "createdByName": "Алим Кодиров",
+      "createdAt": "2026-09-22T20:39:06.662Z"
+    }
+  ],
+  "orderVersions": [
+    {
+      "id": "ver-ord-001-2",
+      "orderId": "ord-001",
+      "versionNumber": 2,
+      "changedByUserId": "usr-zav-1",
+      "changedByName": "Алим Кодиров",
+      "changedByRole": "ZAVSKLAD",
+      "changeType": "WAREHOUSE_PARTIAL_APPROVAL",
+      "reasonCategory": "DEFICIT",
+      "reasonComment": "??????? ???? ??????? ????? ?? ??????, ??????? ?? 100 ??",
+      "snapshot": {
+        "id": "ord-001",
+        "orderNumber": "ORD-2026-001",
+        "supplyMode": "MODE_1_POINT",
+        "pointId": "pt-01",
+        "status": "PARTIALLY_APPROVED",
+        "items": [
+          {
+            "productId": "prod-01",
+            "productName": "Спагетти Экстра 400г",
+            "quantity": 500,
+            "price": 6.5,
+            "weightPerUnitKg": 0.4,
+            "approvedQuantity": 400
+          },
+          {
+            "productId": "prod-02",
+            "productName": "Рожки Традиционные 1кг",
+            "quantity": 300,
+            "price": 12,
+            "weightPerUnitKg": 1
+          }
+        ],
+        "totalWeightKg": 160,
+        "totalSum": 2600,
+        "currency": "TJS",
+        "notes": "Срочная утренняя поставка",
+        "createdAt": "2026-09-22T20:18:46.063Z",
+        "updatedAt": "2026-09-22T20:39:06.663Z",
+        "version": 2
+      },
+      "createdAt": "2026-09-22T20:39:06.663Z"
+    }
+  ],
+  "stock": [
+    {
+      "id": "stk-01",
+      "warehouseId": "wh-main-01",
+      "productPackageId": "prod-01",
+      "productName": "Спагетти Экстра 400г",
+      "packageWeightKg": 0.4,
+      "quantityPhysical": 5000,
+      "quantityReserved": 900,
+      "availableQuantity": 4100,
+      "minCriticalLevel": 500,
+      "updatedAt": "2026-09-22T20:39:06.662Z"
+    },
+    {
+      "id": "stk-02",
+      "warehouseId": "wh-main-01",
+      "productPackageId": "prod-02",
+      "productName": "Рожки Традиционные 1кг",
+      "packageWeightKg": 1,
+      "quantityPhysical": 3000,
+      "quantityReserved": 300,
+      "availableQuantity": 2700,
+      "minCriticalLevel": 300,
+      "updatedAt": "2026-09-22T20:39:00.410Z"
+    },
+    {
+      "id": "stk-03",
+      "warehouseId": "wh-main-01",
+      "productPackageId": "prod-03",
+      "productName": "Вермишель Тонкая 23кг",
+      "packageWeightKg": 23,
+      "quantityPhysical": 400,
+      "quantityReserved": 0,
+      "availableQuantity": 400,
+      "minCriticalLevel": 50,
+      "updatedAt": "2026-09-22T20:39:00.410Z"
+    },
+    {
+      "id": "stk-04",
+      "warehouseId": "wh-main-01",
+      "productPackageId": "prod-04",
+      "productName": "Макароны Перо 23кг",
+      "packageWeightKg": 23,
+      "quantityPhysical": 600,
+      "quantityReserved": 0,
+      "availableQuantity": 600,
+      "minCriticalLevel": 50,
+      "updatedAt": "2026-09-22T20:39:00.410Z"
+    }
+  ],
+  "stockMovements": [
+    {
+      "id": "mov-1790109546662-u3aw",
+      "warehouseId": "wh-main-01",
+      "productPackageId": "prod-01",
+      "productName": "Спагетти Экстра 400г",
+      "type": "ORDER_RESERVE",
+      "deltaQuantity": 400,
+      "balanceAfter": 4100,
+      "referenceId": "ord-001",
+      "actorId": "usr-zav-1",
+      "actorName": "Алим Кодиров",
+      "createdAt": "2026-09-22T20:39:06.662Z"
+    },
+    {
+      "id": "mov-init-1",
+      "warehouseId": "wh-main-01",
+      "productPackageId": "prod-01",
+      "productName": "Спагетти Экстра 400г",
+      "type": "PRODUCTION_RECEIPT",
+      "deltaQuantity": 5000,
+      "balanceAfter": 5000,
+      "referenceId": "BATCH-2026-001",
+      "actorId": "usr-admin",
+      "actorName": "Система",
+      "createdAt": "2026-09-22T20:39:00.410Z"
+    }
+  ],
+  "pickingTasks": [
+    {
+      "id": "pick-546663",
+      "orderId": "ord-001",
+      "orderNumber": "ORD-2026-001",
+      "destinationName": "pt-01",
+      "warehouseId": "wh-main-01",
+      "status": "READY_FOR_LOADING",
+      "assignedWorkerId": "usr-pck-1",
+      "assignedWorkerName": "Собир Комплектовщик",
+      "items": [
+        {
+          "id": "pi-jzahy",
+          "productId": "prod-01",
+          "productName": "Спагетти Экстра 400г",
+          "packageWeightKg": 0.4,
+          "requiredQty": 400,
+          "pickedQty": 400,
+          "isCompleted": true
+        },
+        {
+          "id": "pi-gmtyr",
+          "productId": "prod-02",
+          "productName": "Рожки Традиционные 1кг",
+          "packageWeightKg": 1,
+          "requiredQty": 300,
+          "pickedQty": 300,
+          "isCompleted": true
+        }
+      ],
+      "createdAt": "2026-09-22T20:39:06.663Z",
+      "completedAt": "2026-09-22T20:39:45.971Z"
+    },
+    {
+      "id": "pick-001",
+      "orderId": "ord-001",
+      "orderNumber": "ORD-2026-001",
+      "destinationName": "Собственная Точка №1 (ул. Айни 45)",
+      "warehouseId": "wh-main-01",
+      "status": "READY_FOR_LOADING",
+      "assignedWorkerId": "usr-pck-1",
+      "assignedWorkerName": "Собир Комплектовщик",
+      "items": [
+        {
+          "id": "pi-1",
+          "productId": "prod-01",
+          "productName": "Спагетти Экстра 400г",
+          "packageWeightKg": 0.4,
+          "requiredQty": 500,
+          "pickedQty": 500,
+          "isCompleted": true
+        },
+        {
+          "id": "pi-2",
+          "productId": "prod-02",
+          "productName": "Рожки Традиционные 1кг",
+          "packageWeightKg": 1,
+          "requiredQty": 300,
+          "pickedQty": 300,
+          "isCompleted": true
+        }
+      ],
+      "createdAt": "2026-09-22T20:39:00.410Z",
+      "completedAt": "2026-09-22T20:39:00.410Z"
+    }
+  ],
+  "routes": [
+    {
+      "id": "rt-001",
+      "routeNumber": "ROUTE-2026-001",
+      "vehiclePlate": "01 777 TJ 01",
+      "driverId": "usr-drv-1",
+      "driverName": "Фаррух Доставка",
+      "supervisorId": "usr-sup-1",
+      "supervisorName": "Рустам Исмоилов",
+      "date": "2026-09-23",
+      "status": "PLANNED",
+      "currentVersion": 2,
+      "points": [
+        {
+          "targetName": "??????????? ????? ?1",
+          "id": "rp-01",
+          "totalWeightKg": 460,
+          "routeId": "rt-001",
+          "geoLat": 38.56,
+          "packagesCount": 700,
+          "status": "PENDING",
+          "address": "??. ???? 45",
+          "orderNumber": "ORD-2026-001",
+          "geoLng": 68.77,
+          "orderId": "ord-001",
+          "sequenceOrder": 2
+        },
+        {
+          "targetName": "??????? '???????'",
+          "id": "rp-02",
+          "totalWeightKg": 150,
+          "routeId": "rt-001",
+          "geoLat": 38.57,
+          "packagesCount": 200,
+          "status": "PENDING",
+          "address": "??. ?????? 112",
+          "orderNumber": "ORD-2026-002",
+          "geoLng": 68.78,
+          "orderId": "ord-002",
+          "sequenceOrder": 1
+        }
+      ],
+      "versions": [
+        {
+          "id": "rv-rt-001-2",
+          "routeId": "rt-001",
+          "versionNumber": 2,
+          "reason": "??????? ?? ???????, ???????? ??????????? ??????? ?????",
+          "modifiedByUserId": "usr-sup-1",
+          "modifiedByName": "Рустам Исмоилов",
+          "pointsSnapshot": [
+            {
+              "id": "rp-01",
+              "routeId": "rt-001",
+              "sequenceOrder": 1,
+              "pointId": "pt-01",
+              "targetName": "Собственная Точка №1",
+              "address": "ул. Айни 45, Душанбе",
+              "geoLat": 38.56012,
+              "geoLng": 68.77543,
+              "orderId": "ord-001",
+              "orderNumber": "ORD-2026-001",
+              "status": "PENDING",
+              "packagesCount": 800,
+              "totalWeightKg": 500
+            }
+          ],
+          "createdAt": "2026-09-22T20:39:50.905Z"
+        },
+        {
+          "id": "rv-01-1",
+          "routeId": "rt-001",
+          "versionNumber": 1,
+          "reason": "Базовый утвержденный маршрут",
+          "modifiedByUserId": "usr-sup-1",
+          "modifiedByName": "Рустам Исмоилов",
+          "pointsSnapshot": [],
+          "createdAt": "2026-09-22T20:39:00.410Z"
+        }
+      ]
+    }
+  ],
+  "loadings": [
+    {
+      "id": "load-001",
+      "loadingNumber": "LOAD-2026-001",
+      "routeId": "rt-001",
+      "vehiclePlate": "01 777 TJ 01",
+      "driverId": "usr-drv-1",
+      "driverName": "Фаррух Доставка",
+      "orderIds": [
+        "ord-001"
+      ],
+      "status": "DISPATCHED",
+      "warehouseVerifiedBy": "usr-zav-1",
+      "warehouseVerifiedAt": "2026-09-22T20:18:46.063Z",
+      "totalPackagesWarehouse": 800,
+      "totalWeightWarehouseKg": 500,
+      "totalPackagesDriver": 800,
+      "totalWeightDriverKg": 500,
+      "weightDeltaKg": 0,
+      "packageDelta": 0,
+      "canStartRoute": true,
+      "createdAt": "2026-09-22T20:18:46.063Z",
+      "updatedAt": "2026-09-22T20:19:09.295Z",
+      "version": 4,
+      "driverVerifiedAt": "2026-09-22T20:18:57.107Z",
+      "discrepancyReason": "Расхождение: вес склад 500 кг vs водитель 480 кг (дельта 20.00 кг), уп. склад 800 vs 780",
+      "overrideBy": "Рустам Исмоилов",
+      "overrideNotes": "Недостающие 20 уп со склада догружены и проверены"
+    }
+  ],
+  "returns": [
+    {
+      "id": "ret-595643",
+      "returnNumber": "RET-95643",
+      "deliveryId": "del-ord-001",
+      "orderId": "ord-001",
+      "orderNumber": "ORD-2026-001",
+      "shopName": "Магазин",
+      "driverId": "usr-drv-1",
+      "driverName": "Фаррух Доставка",
+      "items": [
+        {
+          "productId": "prod-01",
+          "productName": "???????? ?????? 400?",
+          "packageWeightKg": 0.4,
+          "returnQty": 25,
+          "reasonCode": "DAMAGED_PACKAGE",
+          "reasonText": "?????? ????????"
+        }
+      ],
+      "totalWeightKg": 10,
+      "photoUrl": "https://proofs.internal/returns/ret-001-damage.jpg",
+      "status": "PENDING_WAREHOUSE_RECEIPT",
+      "waybillUrl": "/api/v1/reports/waybill/RET-95643.pdf",
+      "createdAt": "2026-09-22T20:39:55.643Z"
+    }
+  ],
+  "pieceworkLogs": [
+    {
+      "operationType": "PACKING",
+      "id": "pw-test-01",
+      "tariffPerKg": 0.35,
+      "createdAt": "2026-09-22T23:19:12.2638152+03:00",
+      "totalAmount": 105,
+      "workerId": "usr-wrk-1",
+      "workerName": "?????? ???????",
+      "currency": "TJS",
+      "stationId": "LINE-01",
+      "volumeKg": 300
+    },
+    {
+      "id": "pw-001",
+      "workerId": "usr-wrk-1",
+      "workerName": "Даврон Мирзоев",
+      "stationId": "LINE-01",
+      "operationType": "PACKING",
+      "volumeKg": 650,
+      "tariffPerKg": 0.35,
+      "totalAmount": 227.5,
+      "currency": "TJS",
+      "createdAt": "2026-09-22T20:18:46.063Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-1790109595643-rv6c",
+      "targetRole": "ZAVSKLAD",
+      "type": "RETURN_REGISTERED",
+      "title": "Сформирован возвратный акт",
+      "message": "Водитель Фаррух Доставка оформил накладную возврата RET-95643 (10 кг)",
+      "entityType": "RETURN",
+      "entityId": "ret-595643",
+      "isRead": false,
+      "createdAt": "2026-09-22T20:39:55.643Z"
+    },
+    {
+      "id": "notif-01",
+      "targetRole": "ZAVSKLAD",
+      "type": "ORDER_SUBMITTED",
+      "title": "Новая заявка на рассмотрении",
+      "message": "Заявка ORD-2026-001 от Точки №1 поступила на согласование склада",
+      "entityType": "ORDER",
+      "entityId": "ord-001",
+      "isRead": false,
+      "createdAt": "2026-09-22T20:39:00.410Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "aud-1790109595643-86y8",
+      "timestamp": "2026-09-22T20:39:55.643Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "RETURN",
+      "entityId": "ret-595643",
+      "action": "CREATE_RETURN_WAYBILL",
+      "details": "Сформирована возвратная накладная RET-95643 на сумму возврата веса 10 кг. Причина: [DAMAGED_PACKAGE] ??????????? ??????? ????????? ??????? ??? ???????????????"
+    },
+    {
+      "id": "aud-1790109595635-u018",
+      "timestamp": "2026-09-22T20:39:55.635Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "USER",
+      "entityId": "usr-drv-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790109590905-6hne",
+      "timestamp": "2026-09-22T20:39:50.905Z",
+      "actorId": "usr-sup-1",
+      "actorName": "Рустам Исмоилов",
+      "actorRole": "SUPERVISOR",
+      "entityType": "ROUTE",
+      "entityId": "rt-001",
+      "action": "UPDATE_ROUTE_VERSION",
+      "details": "Маршрут ROUTE-2026-001 обновлен до версии v2. Причина: ??????? ?? ???????, ???????? ??????????? ??????? ?????"
+    },
+    {
+      "id": "aud-1790109590897-0nup",
+      "timestamp": "2026-09-22T20:39:50.897Z",
+      "actorId": "usr-sup-1",
+      "actorName": "Рустам Исмоилов",
+      "actorRole": "SUPERVISOR",
+      "entityType": "USER",
+      "entityId": "usr-sup-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790109585971-4a2a",
+      "timestamp": "2026-09-22T20:39:45.971Z",
+      "actorId": "usr-pck-1",
+      "actorName": "Собир Комплектовщик",
+      "actorRole": "PICKER",
+      "entityType": "PICKING",
+      "entityId": "pick-546663",
+      "action": "COMPLETE_PICKING",
+      "details": "Заказ ORD-2026-001 скомплектован (2 позиций) и передан на рампу к погрузке"
+    },
+    {
+      "id": "aud-1790109585942-0pen",
+      "timestamp": "2026-09-22T20:39:45.942Z",
+      "actorId": "usr-pck-1",
+      "actorName": "Собир Комплектовщик",
+      "actorRole": "PICKER",
+      "entityType": "USER",
+      "entityId": "usr-pck-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790109546673-sy6g",
+      "timestamp": "2026-09-22T20:39:06.673Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "SYSTEM",
+      "entityId": "bck-1790109546672",
+      "action": "CREATE_BACKUP",
+      "details": "Создана резервная копия makaron_backup_2026-09-22T20-39-06-672Z.json (18538 байт). Checksum SHA256: 680592ec77cd..."
+    },
+    {
+      "id": "aud-1790109546669-vjm3",
+      "timestamp": "2026-09-22T20:39:06.669Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "USER",
+      "entityId": "usr-admin",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790109546663-246p",
+      "timestamp": "2026-09-22T20:39:06.663Z",
+      "actorId": "usr-zav-1",
+      "actorName": "Алим Кодиров",
+      "actorRole": "ZAVSKLAD",
+      "entityType": "ORDER",
+      "entityId": "ord-001",
+      "action": "WAREHOUSE_PARTIAL_APPROVED",
+      "details": "Заказ ORD-2026-001 утвержден частично. Причина: [DEFICIT] ??????? ???? ??????? ????? ?? ??????, ??????? ?? 100 ??. Сформировано задание на сборку pick-546663"
+    },
+    {
+      "id": "aud-1790109546653-paas",
+      "timestamp": "2026-09-22T20:39:06.653Z",
+      "actorId": "usr-zav-1",
+      "actorName": "Алим Кодиров",
+      "actorRole": "ZAVSKLAD",
+      "entityType": "USER",
+      "entityId": "usr-zav-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790108352297-okzm",
+      "timestamp": "2026-09-22T20:19:12.297Z",
+      "actorId": "pwa-test-tab",
+      "actorName": "Device pwa-test-tab",
+      "actorRole": "OFFLINE_SYNC",
+      "entityType": "PIECEWORK",
+      "entityId": "pw-test-01",
+      "action": "SYNC_CREATE",
+      "details": "Офлайн-мутация mut-test-uuid-999 успешно применена сервером (действие: CREATE)"
+    },
+    {
+      "id": "aud-1790108349296-20l5",
+      "timestamp": "2026-09-22T20:19:09.296Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "LOADING",
+      "entityId": "load-001",
+      "action": "START_ROUTE",
+      "details": "Водитель Фаррух Доставка выехал на маршрут. Авто: 01 777 TJ 01"
+    },
+    {
+      "id": "aud-1790108349276-1joj",
+      "timestamp": "2026-09-22T20:19:09.276Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "USER",
+      "entityId": "usr-drv-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790108346647-mc3w",
+      "timestamp": "2026-09-22T20:19:06.647Z",
+      "actorId": "usr-sup-1",
+      "actorName": "Рустам Исмоилов",
+      "actorRole": "SUPERVISOR",
+      "entityType": "LOADING",
+      "entityId": "load-001",
+      "action": "RESOLVE_DISCREPANCY_OVERRIDE",
+      "details": "Расхождение снято: Недостающие 20 уп со склада догружены и проверены. Установлен вес: 500 кг, уп.: 800"
+    },
+    {
+      "id": "aud-1790108346628-0qwj",
+      "timestamp": "2026-09-22T20:19:06.628Z",
+      "actorId": "usr-sup-1",
+      "actorName": "Рустам Исмоилов",
+      "actorRole": "SUPERVISOR",
+      "entityType": "USER",
+      "entityId": "usr-sup-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790108342858-wtm3",
+      "timestamp": "2026-09-22T20:19:02.858Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "USER",
+      "entityId": "usr-drv-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790108339925-l9uf",
+      "timestamp": "2026-09-22T20:18:59.925Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "USER",
+      "entityId": "usr-drv-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790108337107-4gz2",
+      "timestamp": "2026-09-22T20:18:57.107Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "LOADING",
+      "entityId": "load-001",
+      "action": "DRIVER_VERIFIED_AND_RECONCILED",
+      "details": "Водитель принял LOAD-2026-001: 780 уп., 480 кг. Результат: MISMATCH"
+    },
+    {
+      "id": "aud-1790108337098-l58x",
+      "timestamp": "2026-09-22T20:18:57.098Z",
+      "actorId": "usr-drv-1",
+      "actorName": "Фаррух Доставка",
+      "actorRole": "TAXSIMOT",
+      "entityType": "USER",
+      "entityId": "usr-drv-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790108333945-1l0j",
+      "timestamp": "2026-09-22T20:18:53.945Z",
+      "actorId": "usr-zav-1",
+      "actorName": "Алим Кодиров",
+      "actorRole": "ZAVSKLAD",
+      "entityType": "USER",
+      "entityId": "usr-zav-1",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-init",
+      "timestamp": "2026-09-22T20:18:46.063Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "SYSTEM",
+      "entityId": "ROOT",
+      "action": "SYSTEM_INITIALIZED",
+      "details": "Master Database schema v1.0 initialized on Drive F:"
+    }
+  ],
+  "syncMutations": [
+    {
+      "uuid": "mut-test-uuid-999",
+      "deviceId": "pwa-test-tab",
+      "entityType": "piecework",
+      "action": "CREATE",
+      "status": "APPLIED",
+      "serverVersion": 1,
+      "receivedAt": "2026-09-22T20:19:12.297Z"
+    }
+  ],
+  "backups": [
+    {
+      "id": "bck-1790109546672",
+      "filename": "makaron_backup_2026-09-22T20-39-06-672Z.json",
+      "timestamp": "2026-09-22T20:39:06.672Z",
+      "sizeBytes": 18538,
+      "checksum": "680592ec77cd3932ebcc62dd849fbd12a6c271cfe457565369c8fb82e33ff6cc",
+      "description": "Pre-E2E Verification Backup",
+      "entityCounts": {
+        "users": 9,
+        "orders": 1,
+        "stock": 4,
+        "routes": 1,
+        "loadings": 1,
+        "auditLogs": 14
+      }
+    }
+  ]
+}
