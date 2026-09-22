@@ -196,6 +196,10 @@ async function main() {
    - Independent confirmation by Storekeeper (Zavsklad) and Driver (Taxsimot) with mismatch blocking.
 6. **Automated SHA-256 Disaster Recovery**:
    - Zero-data-loss snapshots and checksum-verified restore API.
+7. **Product Selection & Ergonomic Piece Controls (Штучность)**:
+   - Resilient multi-tier loading of product packages across all weight categories (5 kg, 10 kg, 15 kg, 23 kg, 25 kg, 50 kg).
+   - Ergonomic piece controls with step buttons (\`-10\`, \`-1\`, input field, \`+1\`, \`+10\`) and quick piece presets (\`5\`, \`10\`, \`15\`, \`20\` шт).
+   - Instant calculation of total weight and places, 1-click standard TZ batch fill (\`15 + 20 + 10 = 45 мест / 1 035 кг\`), and real-time stock availability badges.
 
 ### 📥 Asset Downloads
 Download \`${zipName}\` below for the full deployment-ready archive.

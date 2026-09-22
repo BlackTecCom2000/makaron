@@ -11,7 +11,7 @@ import {
   FileText
 } from 'lucide-react';
 import type { User, Order, ProductPackage } from '../types';
-import { db } from '../db/database';
+import { db, seedInitialData } from '../db/database';
 import { syncEngine } from '../services/syncEngine';
 import { logAudit } from '../services/auditService';
 
@@ -33,7 +33,11 @@ export const PointView: React.FC<PointViewProps> = ({ currentUser }) => {
   }, [currentUser]);
 
   const loadData = async () => {
-    const pkgs = await db.productPackages.where('isActive').equals(1).toArray();
+    let pkgs = (await db.productPackages.toArray()).filter(p => p.isActive !== false);
+    if (pkgs.length === 0) {
+      await seedInitialData();
+      pkgs = (await db.productPackages.toArray()).filter(p => p.isActive !== false);
+    }
     setPackages(pkgs);
 
     const pointOrders = await db.orders

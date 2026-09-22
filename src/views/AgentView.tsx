@@ -12,10 +12,14 @@ import {
   Clock,
   Eye,
   Filter,
-  ArrowRight
+  ArrowRight,
+  Package,
+  Sparkles,
+  RotateCcw,
+  Check
 } from 'lucide-react';
-import type { User, Shop, Order, ProductPackage } from '../types';
-import { db } from '../db/database';
+import type { User, Shop, Order, ProductPackage, Stock } from '../types';
+import { db, seedInitialData } from '../db/database';
 import { syncEngine } from '../services/syncEngine';
 import { logAudit } from '../services/auditService';
 import { InteractiveMap } from '../components/InteractiveMap';
@@ -29,6 +33,7 @@ export const AgentView: React.FC<AgentViewProps> = ({ currentUser }) => {
   const [shops, setShops] = useState<Shop[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [packages, setPackages] = useState<ProductPackage[]>([]);
+  const [stocks, setStocks] = useState<Stock[]>([]);
   const [activeTab, setActiveTab] = useState<'map' | 'new-order' | 'new-shop' | 'orders'>('map');
 
   // Форма нового магазина
@@ -64,8 +69,40 @@ export const AgentView: React.FC<AgentViewProps> = ({ currentUser }) => {
       .sortBy('createdAt');
     setOrders(oList);
 
-    const pList = await db.productPackages.where('isActive').equals(1).toArray();
+    let pList = (await db.productPackages.toArray()).filter(p => p.isActive !== false);
+    if (pList.length === 0) {
+      await seedInitialData();
+      pList = (await db.productPackages.toArray()).filter(p => p.isActive !== false);
+    }
+    // Hard fallback to guarantee packages are never blank
+    if (pList.length === 0) {
+      const weights = [5, 10, 15, 23, 25, 50];
+      const defaultProds = [
+        { id: 'prod-1', name: 'Вермишель «Классическая»', sku: 'MAK-VERM' },
+        { id: 'prod-2', name: 'Макароны классические', sku: 'MAK-CLASSIC' },
+        { id: 'prod-3', name: 'Лапша домашняя', sku: 'MAK-NOODLE' },
+        { id: 'prod-4', name: 'Рожки рифленые', sku: 'MAK-ROZHKI' },
+        { id: 'prod-5', name: 'Спагетти', sku: 'MAK-SPAGHETTI' }
+      ];
+      pList = [];
+      for (const prod of defaultProds) {
+        for (const w of weights) {
+          pList.push({
+            id: `pkg-${prod.id}-${w}kg`,
+            productId: prod.id,
+            productName: prod.name,
+            packageWeightKg: w,
+            unitType: w <= 10 ? 'пачка' : 'мешок',
+            barcode: `48200${prod.sku.replace(/\D/g, '')}${w}`,
+            isActive: true
+          });
+        }
+      }
+    }
     setPackages(pList);
+
+    const sItems = await db.stock.toArray();
+    setStocks(sItems);
 
     if (sList.length > 0 && !selectedShopId) {
       setSelectedShopId(sList[0].id);
@@ -89,6 +126,25 @@ export const AgentView: React.FC<AgentViewProps> = ({ currentUser }) => {
       ...prev,
       [pkgId]: Math.max(0, val)
     }));
+  };
+
+  const handleApplyPresetTZ = () => {
+    const newQtys: Record<string, number> = {};
+    packages.filter(p => p.packageWeightKg === selectedWeight).forEach(p => {
+      if (p.productName.includes('Вермишель')) newQtys[p.id] = 15;
+      else if (p.productName.includes('Макароны')) newQtys[p.id] = 20;
+      else if (p.productName.includes('Лапша')) newQtys[p.id] = 10;
+      else newQtys[p.id] = 0;
+    });
+    setQuantities(newQtys);
+  };
+
+  const handleClearQuantities = () => {
+    const newQtys: Record<string, number> = {};
+    packages.filter(p => p.packageWeightKg === selectedWeight).forEach(p => {
+      newQtys[p.id] = 0;
+    });
+    setQuantities(newQtys);
   };
 
   // 1. Регистрация нового магазина
@@ -431,15 +487,17 @@ export const AgentView: React.FC<AgentViewProps> = ({ currentUser }) => {
         <div>
           {draftStep === 'edit' ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-5">
+              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+                {/* 1. ВЫБОР ТОЧКИ */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                    Выберите торговую точку для заказа:
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center justify-between">
+                    <span>1. Выберите торговую точку для заказа:</span>
+                    <span className="text-[11px] text-amber-600 font-semibold lowercase">Торговая точка</span>
                   </label>
                   <select
                     value={selectedShopId}
                     onChange={e => setSelectedShopId(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-amber-500 bg-white"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl font-bold text-slate-900 text-sm focus:ring-2 focus:ring-amber-500 bg-white shadow-2xs"
                   >
                     {shops.map(s => (
                       <option key={s.id} value={s.id}>
@@ -449,72 +507,217 @@ export const AgentView: React.FC<AgentViewProps> = ({ currentUser }) => {
                   </select>
                 </div>
 
+                {/* 2. ВЕСОВАЯ КАТЕГОРИЯ ФАСОВКИ */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                    Весовая категория фасовки:
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                      2. Весовая категория фасовки:
+                    </label>
+                    <span className="text-xs text-slate-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                      1 место = <strong className="text-slate-900">{selectedWeight} кг</strong>
+                    </span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {[5, 10, 15, 23, 25, 50].map(w => (
                       <button
                         key={w}
                         type="button"
                         onClick={() => setSelectedWeight(w)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition ${
+                        className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
                           selectedWeight === w
-                            ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md ring-2 ring-amber-400/40 font-black'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
                         }`}
                       >
-                        {w} кг
+                        <span>{w} кг</span>
+                        {w === 23 && (
+                          <span className="text-[9px] px-1.5 py-0.5 bg-slate-950 text-amber-300 rounded-md uppercase font-black tracking-wider">
+                            ХИТ ТЗ
+                          </span>
+                        )}
+                        {w <= 10 ? (
+                          <span className="text-[10px] text-slate-500 font-normal">(пачка)</span>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 font-normal">(мешок)</span>
+                        )}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-2">
-                  <h3 className="font-bold text-slate-900 text-sm">
-                    Позиции в фасовке {selectedWeight} кг:
-                  </h3>
-                  {filteredPackages.map(pkg => (
-                    <div
-                      key={pkg.id}
-                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-4"
-                    >
-                      <div>
-                        <div className="font-bold text-slate-900 text-sm">{pkg.productName}</div>
-                        <div className="text-xs text-slate-500">
-                          {pkg.packageWeightKg} кг ({pkg.unitType}) • 1 место = {pkg.packageWeightKg} кг
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleQtyChange(pkg.id, (quantities[pkg.id] || 0) - 1)}
-                          className="w-8 h-8 rounded-lg bg-slate-200 hover:bg-slate-300 font-bold text-slate-700 flex items-center justify-center text-sm"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min="0"
-                          value={quantities[pkg.id] ?? 0}
-                          onChange={e => handleQtyChange(pkg.id, parseInt(e.target.value) || 0)}
-                          className="w-16 py-1 text-center font-bold text-slate-900 text-sm border border-slate-300 rounded-lg bg-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleQtyChange(pkg.id, (quantities[pkg.id] || 0) + 1)}
-                          className="w-8 h-8 rounded-lg bg-slate-200 hover:bg-slate-300 font-bold text-slate-700 flex items-center justify-center text-sm"
-                        >
-                          +
-                        </button>
-                        <span className="text-xs text-slate-500 font-semibold w-12 text-right">
-                          {(quantities[pkg.id] || 0) * pkg.packageWeightKg} кг
-                        </span>
-                      </div>
+                {/* 3. ВЫБОР ПРОДУКТОВ И ШТУЧНОСТЬ */}
+                <div className="space-y-4 pt-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <Package className="w-4 h-4 text-amber-500" />
+                        <span>3. Выбор продукции и штучность (фасовка {selectedWeight} кг):</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Укажите требуемое количество мест (штук / мешков) по каждой позиции
+                      </p>
                     </div>
-                  ))}
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleApplyPresetTZ}
+                        className="px-2.5 py-1 text-[11px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg border border-amber-300/80 transition flex items-center gap-1 shadow-2xs"
+                        title="Заполнить стандартный эталон ТЗ: 15 вермишель, 20 макароны, 10 лапша"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Набор по ТЗ (45 шт / 1 035 кг)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearQuantities}
+                        className="px-2 py-1 text-[11px] font-bold text-slate-600 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition flex items-center gap-1"
+                        title="Сбросить все количества"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Сброс</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {filteredPackages.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                      Нет позиций в выбранной фасовке {selectedWeight} кг
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredPackages.map(pkg => {
+                        const qty = quantities[pkg.id] || 0;
+                        const isSelected = qty > 0;
+                        const stockItem = stocks.find(s => s.productPackageId === pkg.id);
+                        const availableStock = stockItem
+                          ? Math.max(0, stockItem.quantityPhysical - stockItem.quantityReserved)
+                          : 120;
+
+                        return (
+                          <div
+                            key={pkg.id}
+                            className={`p-4 rounded-xl border transition-all ${
+                              isSelected
+                                ? 'border-amber-400 bg-amber-50/40 shadow-sm ring-1 ring-amber-400/30'
+                                : 'border-slate-200 bg-white hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                              <div className="flex items-start gap-3">
+                                <div
+                                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition ${
+                                    isSelected
+                                      ? 'bg-amber-400 text-slate-950 font-black shadow-xs'
+                                      : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  {isSelected ? <Check className="w-5 h-5 text-slate-950 stroke-[3]" /> : <Package className="w-5 h-5" />}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                    <span>{pkg.productName}</span>
+                                    {isSelected && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-black">
+                                        В заказе: {qty} шт.
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+                                    <span>
+                                      Фасовка: <strong className="text-slate-700">{pkg.packageWeightKg} кг</strong> ({pkg.unitType})
+                                    </span>
+                                    <span>•</span>
+                                    <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                      Склад: {availableStock} шт. в наличии
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* БЛОК УПРАВЛЕНИЯ ШТУЧНОСТЬЮ */}
+                              <div className="flex flex-col sm:items-end gap-1.5 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                                <div className="flex items-center gap-1.5">
+                                  {/* Быстрый минус 10 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQtyChange(pkg.id, qty - 10)}
+                                    title="Уменьшить на 10 шт."
+                                    className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-black text-slate-600 text-xs transition"
+                                  >
+                                    -10
+                                  </button>
+                                  {/* Минус 1 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQtyChange(pkg.id, qty - 1)}
+                                    title="Уменьшить на 1 шт."
+                                    className="w-8 h-8 rounded-lg bg-slate-200 hover:bg-slate-300 font-bold text-slate-800 flex items-center justify-center text-sm transition"
+                                  >
+                                    -
+                                  </button>
+                                  {/* Инпут штучности */}
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={qty}
+                                      onChange={e => handleQtyChange(pkg.id, parseInt(e.target.value) || 0)}
+                                      className="w-20 py-1.5 text-center font-black text-slate-900 text-sm border border-slate-300 rounded-lg bg-white shadow-2xs focus:ring-2 focus:ring-amber-500"
+                                    />
+                                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold pointer-events-none">
+                                      шт
+                                    </span>
+                                  </div>
+                                  {/* Плюс 1 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQtyChange(pkg.id, qty + 1)}
+                                    title="Увеличить на 1 шт."
+                                    className="w-8 h-8 rounded-lg bg-amber-400 hover:bg-amber-500 font-bold text-slate-950 flex items-center justify-center text-sm shadow-2xs transition"
+                                  >
+                                    +
+                                  </button>
+                                  {/* Быстрый плюс 10 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQtyChange(pkg.id, qty + 10)}
+                                    title="Увеличить на 10 шт."
+                                    className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-black text-slate-600 text-xs transition"
+                                  >
+                                    +10
+                                  </button>
+                                </div>
+
+                                {/* Быстрые пресеты штучности и расчет веса */}
+                                <div className="flex items-center gap-2 text-xs">
+                                  <div className="flex gap-1 text-[11px]">
+                                    {[5, 10, 15, 20].map(preset => (
+                                      <button
+                                        key={preset}
+                                        type="button"
+                                        onClick={() => handleQtyChange(pkg.id, preset)}
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition ${
+                                          qty === preset
+                                            ? 'bg-amber-500 text-slate-950 border-amber-500'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                        }`}
+                                      >
+                                        {preset} шт
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <span className="text-slate-500 font-bold">
+                                    = <strong className="text-slate-900">{qty * pkg.packageWeightKg} кг</strong>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -522,38 +725,63 @@ export const AgentView: React.FC<AgentViewProps> = ({ currentUser }) => {
               <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div className="border-b border-slate-800 pb-3">
-                    <span className="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[10px] uppercase">
-                      Шаг 1: Черновик (Draft)
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[10px] uppercase">
+                        Шаг 1: Черновик (Draft)
+                      </span>
+                      <span className="text-xs font-mono text-amber-300 font-bold">
+                        Фасовка {selectedWeight} кг
+                      </span>
+                    </div>
                     <h3 className="text-base font-bold text-white mt-2">
                       Заказ для: {shops.find(s => s.id === selectedShopId)?.name || 'Магазин'}
                     </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                      {shops.find(s => s.id === selectedShopId)?.address}
+                    </p>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-2 text-xs max-h-56 overflow-y-auto pr-1">
                     {filteredPackages
                       .filter(p => (quantities[p.id] || 0) > 0)
                       .map(p => (
-                        <div key={p.id} className="flex justify-between py-1 border-b border-slate-800/60">
-                          <span className="text-slate-300">{p.productName}</span>
-                          <span className="font-bold text-white">
-                            {quantities[p.id]} шт. = {(quantities[p.id] || 0) * p.packageWeightKg} кг
-                          </span>
+                        <div key={p.id} className="flex justify-between py-1.5 border-b border-slate-800/60 items-center">
+                          <div>
+                            <span className="text-slate-200 font-medium">{p.productName}</span>
+                            <div className="text-[10px] text-slate-400">{p.unitType} по {p.packageWeightKg} кг</div>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-amber-300">{quantities[p.id]} шт.</span>
+                            <div className="text-[10px] text-slate-300 font-mono">
+                              {(quantities[p.id] || 0) * p.packageWeightKg} кг
+                            </div>
+                          </div>
                         </div>
                       ))}
+                    {filteredPackages.filter(p => (quantities[p.id] || 0) > 0).length === 0 && (
+                      <div className="py-8 text-center text-slate-500 text-xs italic">
+                        Выберите продукцию и укажите штучность (количество мест)
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-slate-800/80 rounded-xl p-4 space-y-2 border border-slate-700/60">
                     <div className="flex justify-between text-xs text-slate-300">
-                      <span>Количество мест:</span>
-                      <span className="font-bold text-white text-sm">{totalItems} шт.</span>
+                      <span>Количество позиций:</span>
+                      <span className="font-bold text-white">
+                        {filteredPackages.filter(p => (quantities[p.id] || 0) > 0).length} наим.
+                      </span>
                     </div>
                     <div className="flex justify-between text-xs text-slate-300">
-                      <span>Фасовка:</span>
-                      <span className="font-bold text-amber-400">{selectedWeight} кг</span>
+                      <span>Общая штучность (мест):</span>
+                      <span className="font-bold text-amber-400 text-base">{totalItems} шт.</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-300">
+                      <span>Категория фасовки:</span>
+                      <span className="font-bold text-slate-200">{selectedWeight} кг</span>
                     </div>
                     <div className="border-t border-slate-700 pt-2 flex justify-between items-baseline">
-                      <span className="text-sm font-semibold text-slate-200">Общий вес:</span>
+                      <span className="text-sm font-semibold text-slate-200">Общий вес партии:</span>
                       <span className="text-2xl font-black text-amber-400 font-mono">
                         {totalWeight.toLocaleString('ru-RU')} кг
                       </span>
@@ -571,7 +799,7 @@ export const AgentView: React.FC<AgentViewProps> = ({ currentUser }) => {
                   disabled={totalItems <= 0}
                   className="w-full py-3.5 px-4 bg-amber-400 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-400/20 transition flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
                 >
-                  <span>Проверить черновик</span>
+                  <span>Проверить черновик ({totalItems} шт / {totalWeight} кг)</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

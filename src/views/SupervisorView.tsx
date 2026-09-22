@@ -16,7 +16,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import type { User, Order, Shop, Vehicle, Route, RoutePoint } from '../types';
-import { db } from '../db/database';
+import { db, seedInitialData } from '../db/database';
 import { syncEngine } from '../services/syncEngine';
 import { logAudit } from '../services/auditService';
 import { InteractiveMap } from '../components/InteractiveMap';
@@ -48,7 +48,11 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({ currentUser }) =
     const sList = await db.shops.toArray();
     setShops(sList);
 
-    const vList = await db.vehicles.where('isActive').equals(1).toArray();
+    let vList = (await db.vehicles.toArray()).filter(v => v.isActive !== false);
+    if (vList.length === 0) {
+      await seedInitialData();
+      vList = (await db.vehicles.toArray()).filter(v => v.isActive !== false);
+    }
     setVehicles(vList);
     if (vList.length > 0 && !selectedVehicleId) {
       setSelectedVehicleId(vList[0].id);

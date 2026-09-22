@@ -25,7 +25,7 @@ import type {
   PickingTask,
   AttendanceStatus
 } from '../types';
-import { db } from '../db/database';
+import { db, seedInitialData } from '../db/database';
 import { syncEngine } from '../services/syncEngine';
 import { logAudit } from '../services/auditService';
 
@@ -64,7 +64,11 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
     const sList = await db.stock.where('warehouseId').equals('wh-1').toArray();
     setStock(sList);
 
-    const wList = await db.workers.where('isActive').equals(1).toArray();
+    let wList = (await db.workers.toArray()).filter(w => w.isActive !== false);
+    if (wList.length === 0) {
+      await seedInitialData();
+      wList = (await db.workers.toArray()).filter(w => w.isActive !== false);
+    }
     setWorkers(wList);
     if (wList.length > 0 && !selectedWorkerId) {
       setSelectedWorkerId(wList[0].id);

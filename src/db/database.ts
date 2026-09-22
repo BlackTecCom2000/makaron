@@ -84,9 +84,8 @@ export const db = new MakaronDatabase();
 
 export async function seedInitialData() {
   const usersCount = await db.users.count();
-  if (usersCount > 0) return; // Уже инициализировано
-
-  // 1. Склады
+  if (usersCount === 0) {
+    // 1. Склады
   const wh1: Warehouse = {
     id: 'wh-1',
     name: 'Центральный производственный склад №1',
@@ -312,17 +311,20 @@ export async function seedInitialData() {
     }
   ];
   await db.shops.bulkAdd(shops);
+  }
 
   // 5. Номенклатура продукции и фасовка
-  const category: ProductCategory = {
-    id: 'cat-1',
-    name: 'Макаронные изделия высшего сорта',
-    code: 'PASTA-PREMIUM',
-    sortOrder: 1
-  };
-  await db.productCategories.add(category);
+  const pkgsCount = await db.productPackages.count();
+  if (pkgsCount === 0) {
+    const category: ProductCategory = {
+      id: 'cat-1',
+      name: 'Макаронные изделия высшего сорта',
+      code: 'PASTA-PREMIUM',
+      sortOrder: 1
+    };
+    await db.productCategories.add(category);
 
-  const products: Product[] = [
+    const products: Product[] = [
     { id: 'prod-1', categoryId: 'cat-1', name: 'Вермишель', sku: 'MAK-VERM', description: 'Тонкая вермишель из твердых сортов пшеницы' },
     { id: 'prod-2', categoryId: 'cat-1', name: 'Макароны классические', sku: 'MAK-CLASSIC', description: 'Трубчатые макаронные изделия' },
     { id: 'prod-3', categoryId: 'cat-1', name: 'Лапша домашняя', sku: 'MAK-NOODLE', description: 'Широкая плоская лапша' },
@@ -367,9 +369,12 @@ export async function seedInitialData() {
     });
   }
   await db.stock.bulkAdd(stockItems);
+  }
 
   // 7. Работники склада
-  const workers: Worker[] = [
+  const workersCount = await db.workers.count();
+  if (workersCount === 0) {
+    const workers: Worker[] = [
     {
       id: 'worker-1',
       warehouseId: 'wh-1',
@@ -434,121 +439,134 @@ export async function seedInitialData() {
     { id: 'wl-3', workerId: 'worker-3', workerName: 'Сидоров Алексей Сергеевич', date: today, operationType: 'Комплектация', volumeKg: 500, tariffRatePerKg: 0.15, calculatedAmount: 75.00, recordedByUserId: 'user-zavsklad-1', recordedByName: 'Каримов Назир', createdAt: '2026-09-22T10:10:00Z' }
   ];
   await db.workerWorkLogs.bulkAdd(workLogs);
+  }
 
   // 8. Транспортные средства
-  const vehicle: Vehicle = {
-    id: 'veh-3',
-    name: 'Автомобиль №3 (ГАЗель NEXT)',
-    plateNumber: '01 234 ABC',
-    capacityKg: 2500,
-    driverUserId: 'user-taxsimot-1',
-    driverName: 'Рахимов Рустам',
-    isActive: true
-  };
-  await db.vehicles.add(vehicle);
+  const vehiclesCount = await db.vehicles.count();
+  if (vehiclesCount === 0) {
+    const vehicle: Vehicle = {
+      id: 'veh-3',
+      name: 'Автомобиль №3 (ГАЗель NEXT)',
+      plateNumber: '01 234 ABC',
+      capacityKg: 2500,
+      driverUserId: 'user-taxsimot-1',
+      driverName: 'Рахимов Рустам',
+      isActive: true
+    };
+    await db.vehicles.add(vehicle);
+  }
 
   // 9. Пример базовой заявки №000152 (как в ТЗ)
-  const sampleOrder: Order = {
-    id: 'order-152',
-    orderNumber: '#000152',
-    mode: 'MODE_1_DIRECT',
-    status: 'SUBMITTED',
-    pointId: 'point-1',
-    destinationName: 'Фирменная точка «Магазин №4»',
-    destinationAddress: 'г. Душанбе, ул. Негмата Карабаева 28',
-    destinationLat: 38.5280,
-    destinationLng: 68.7690,
-    createdByUserId: 'user-point-1',
-    createdByName: 'Мавлонова Зарина',
-    createdByRole: 'POINT',
-    totalWeightKg: 1035, // (15 + 20 + 10) * 23 kg = 45 * 23 = 1035 kg
-    totalItemsCount: 45,
-    clientUuid: 'uuid-sample-152',
-    items: [
-      {
-        id: 'item-1',
-        orderId: 'order-152',
-        productPackageId: 'pkg-prod-1-23kg',
-        productName: 'Вермишель',
-        packageWeightKg: 23,
-        unitType: 'мешок',
-        requestedQty: 15,
-        approvedSupervisorQty: 15,
-        approvedWarehouseQty: 15,
-        unitWeightKg: 23
-      },
-      {
-        id: 'item-2',
-        orderId: 'order-152',
-        productPackageId: 'pkg-prod-2-23kg',
-        productName: 'Макароны классические',
-        packageWeightKg: 23,
-        unitType: 'мешок',
-        requestedQty: 20,
-        approvedSupervisorQty: 20,
-        approvedWarehouseQty: 20,
-        unitWeightKg: 23
-      },
-      {
-        id: 'item-3',
-        orderId: 'order-152',
-        productPackageId: 'pkg-prod-3-23kg',
-        productName: 'Лапша домашняя',
-        packageWeightKg: 23,
-        unitType: 'мешок',
-        requestedQty: 10,
-        approvedSupervisorQty: 10,
-        approvedWarehouseQty: 10,
-        unitWeightKg: 23
-      }
-    ],
-    history: [
-      {
-        id: 'ver-1',
-        orderId: 'order-152',
-        versionNumber: 1,
-        authorUserId: 'user-point-1',
-        authorName: 'Мавлонова Зарина',
-        authorRole: 'POINT',
-        changeType: 'CREATED',
-        diffSummary: 'Создана прямая заявка Режима 1 на 45 мешков (1 035 кг)',
-        timestamp: '2026-09-22T09:10:00Z'
-      }
-    ],
-    comments: [],
-    createdAt: '2026-09-22T09:10:00Z',
-    updatedAt: '2026-09-22T09:10:00Z'
-  };
-  await db.orders.add(sampleOrder);
+  const ordersCount = await db.orders.count();
+  if (ordersCount === 0) {
+    const sampleOrder: Order = {
+      id: 'order-152',
+      orderNumber: '#000152',
+      mode: 'MODE_1_DIRECT',
+      status: 'SUBMITTED',
+      pointId: 'point-1',
+      destinationName: 'Фирменная точка «Магазин №4»',
+      destinationAddress: 'г. Душанбе, ул. Негмата Карабаева 28',
+      destinationLat: 38.5280,
+      destinationLng: 68.7690,
+      createdByUserId: 'user-point-1',
+      createdByName: 'Тошев Алишер',
+      createdByRole: 'POINT',
+      totalWeightKg: 1035, // 15*23 + 20*23 + 10*23 = 1035 кг
+      totalItemsCount: 45, // 15 + 20 + 10 = 45 мест
+      clientUuid: 'uuid-init-order-152',
+      items: [
+        {
+          id: 'item-1',
+          orderId: 'order-152',
+          productPackageId: 'pkg-prod-1-23kg',
+          productName: 'Вермишель (23 кг)',
+          packageWeightKg: 23,
+          unitType: 'мешок',
+          requestedQty: 15,
+          approvedSupervisorQty: 15,
+          approvedWarehouseQty: 15,
+          unitWeightKg: 23
+        },
+        {
+          id: 'item-2',
+          orderId: 'order-152',
+          productPackageId: 'pkg-prod-2-23kg',
+          productName: 'Макароны классические (23 кг)',
+          packageWeightKg: 23,
+          unitType: 'мешок',
+          requestedQty: 20,
+          approvedSupervisorQty: 20,
+          approvedWarehouseQty: 20,
+          unitWeightKg: 23
+        },
+        {
+          id: 'item-3',
+          orderId: 'order-152',
+          productPackageId: 'pkg-prod-3-23kg',
+          productName: 'Лапша домашняя (23 кг)',
+          packageWeightKg: 23,
+          unitType: 'мешок',
+          requestedQty: 10,
+          approvedSupervisorQty: 10,
+          approvedWarehouseQty: 10,
+          unitWeightKg: 23
+        }
+      ],
+      history: [
+        {
+          id: 'ver-init-1',
+          orderId: 'order-152',
+          versionNumber: 1,
+          authorUserId: 'user-point-1',
+          authorName: 'Тошев Алишер',
+          authorRole: 'POINT',
+          changeType: 'CREATED',
+          diffSummary: 'Создана прямая заявка Режима 1 на 45 мешков (1 035 кг)',
+          timestamp: '2026-09-22T09:10:00Z'
+        }
+      ],
+      comments: [],
+      createdAt: '2026-09-22T09:10:00Z',
+      updatedAt: '2026-09-22T09:10:00Z'
+    };
+    await db.orders.add(sampleOrder);
+  }
 
   // 10. Базовые уведомления
-  const notifs: AppNotification[] = [
-    {
-      id: 'notif-1',
-      targetRole: 'ZAVSKLAD',
-      title: 'Новая прямая заявка #000152',
-      message: 'Фирменная точка «Магазин №4» создала заявку на 1 035 кг (45 мешков фасовки 23 кг)',
-      orderId: 'order-152',
-      isRead: false,
-      createdAt: '2026-09-22T09:10:05Z'
-    }
-  ];
-  await db.notifications.bulkAdd(notifs);
+  const notifsCount = await db.notifications.count();
+  if (notifsCount === 0) {
+    const notifs: AppNotification[] = [
+      {
+        id: 'notif-1',
+        targetRole: 'ZAVSKLAD',
+        title: 'Новая прямая заявка #000152',
+        message: 'Фирменная точка «Магазин №4» создала заявку на 1 035 кг (45 мешков фасовки 23 кг)',
+        orderId: 'order-152',
+        isRead: false,
+        createdAt: '2026-09-22T09:10:05Z'
+      }
+    ];
+    await db.notifications.bulkAdd(notifs);
+  }
 
   // 11. Базовый лог аудита
-  const audit: AuditLog = {
-    id: 'audit-1',
-    userId: 'user-admin',
-    userName: 'Рустамов Джамшед',
-    roleCode: 'ADMIN',
-    actionType: 'SYSTEM_INITIALIZATION',
-    entityName: 'SYSTEM',
-    entityId: 'ROOT',
-    diffSummary: 'Инициализация цифровой системы управления BlackTecCom Makaron',
-    reason: 'Первоначальный запуск платформы',
-    ipAddress: '127.0.0.1',
-    deviceInfo: 'Web Console / Windows',
-    timestamp: '2026-09-22T08:00:00Z'
-  };
-  await db.auditLogs.add(audit);
+  const auditCount = await db.auditLogs.count();
+  if (auditCount === 0) {
+    const audit: AuditLog = {
+      id: 'audit-1',
+      userId: 'user-admin',
+      userName: 'Рустамов Джамшед',
+      roleCode: 'ADMIN',
+      actionType: 'SYSTEM_INITIALIZATION',
+      entityName: 'SYSTEM',
+      entityId: 'ROOT',
+      diffSummary: 'Инициализация цифровой системы управления BlackTecCom Makaron',
+      reason: 'Первоначальный запуск платформы',
+      ipAddress: '127.0.0.1',
+      deviceInfo: 'Web Console / Windows',
+      timestamp: '2026-09-22T08:00:00Z'
+    };
+    await db.auditLogs.add(audit);
+  }
 }
