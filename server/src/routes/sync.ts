@@ -69,9 +69,48 @@ router.post('/push', (req, res) => {
           serverVersion = targetLoading.version;
           broadcastEvent('LOADING_UPDATED', targetLoading);
         }
-      } else if (entityType === 'piecework' || entityType === 'pieceworkLogs') {
-        serverDb.pieceworkLogs.unshift(payload);
-        serverId = payload.id;
+      } else if (entityType === 'piecework' || entityType === 'pieceworkLogs' || entityType === 'workerWorkLogs') {
+        if (action === 'CREATE') {
+          const vol = Number(payload.volumeKg) || 0;
+          const op = payload.operationType || 'Комплектация';
+          const activeRate = serverDb.rates.find(
+            r => (r.operationType.toLowerCase() === op.toLowerCase() ||
+                 (op.toLowerCase().includes('комплект') && r.operationType === 'PACKING')) &&
+                 r.isActive
+          );
+          const tariff = activeRate ? activeRate.ratePerKg : ((op.toLowerCase().includes('комплект') || op === 'LOADING') ? 0.15 : 0.35);
+          const totalAmount = Math.round(vol * tariff * 100) / 100;
+
+          const pieceworkRecord = {
+            ...payload,
+            volumeKg: vol,
+            operationType: op,
+            tariffPerKg: tariff,
+            totalAmount,
+            isLocked: true,
+            lockedAt: payload.lockedAt || new Date().toISOString()
+          };
+          serverDb.pieceworkLogs.unshift(pieceworkRecord);
+          serverId = pieceworkRecord.id;
+        } else if (action === 'UPDATE' || action === 'DELETE') {
+          const isExec = req.user?.role === 'ADMIN' || req.user?.role === 'DIRECTOR';
+          if (!isExec) {
+            throw new Error('FORBIDDEN_IMMUTABLE_LOG: Зафиксированные записи выработки защищены от изменений завскладом');
+          }
+          if (action === 'UPDATE') {
+            const target = serverDb.pieceworkLogs.find(l => l.id === payload.id);
+            if (target) {
+              Object.assign(target, payload);
+              target.totalAmount = Math.round((target.volumeKg || 0) * (target.tariffPerKg || 0.15) * 100) / 100;
+              serverId = target.id;
+            }
+          } else if (action === 'DELETE') {
+            const idx = serverDb.pieceworkLogs.findIndex(l => l.id === payload.id);
+            if (idx !== -1) {
+              serverDb.pieceworkLogs.splice(idx, 1);
+            }
+          }
+        }
       }
 
       // 3. Record in Idempotency Registry

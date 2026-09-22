@@ -71,8 +71,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   const getRoleBadge = (role: RoleCode) => {
     switch (role) {
-      case 'ADMIN':
-        return { label: 'Администратор', icon: Shield, color: 'bg-rose-600 text-white' };
       case 'POINT':
         return { label: 'Собственная Точка', icon: Store, color: 'bg-indigo-600 text-white' };
       case 'AGENT':
@@ -88,9 +86,9 @@ export const Header: React.FC<HeaderProps> = ({
       case 'TAXSIMOT':
         return { label: 'Таксимот / Водитель', icon: Truck, color: 'bg-teal-600 text-white' };
       case 'DIRECTOR':
-        return { label: 'Генеральный директор', icon: BarChart3, color: 'bg-emerald-700 text-white' };
+      case 'ADMIN':
       case 'AUDITOR':
-        return { label: 'Главный аудитор', icon: Search, color: 'bg-slate-700 text-white' };
+        return { label: 'Руководитель (Директор / Админ / Аудитор)', icon: ShieldCheck, color: 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md' };
     }
   };
 
@@ -235,31 +233,41 @@ export const Header: React.FC<HeaderProps> = ({
                   Переключить роль (Тестирование всех 10 кабинетов):
                 </div>
                 <div className="py-1">
-                  {availableUsers.map(u => {
-                    const uBadge = getRoleBadge(u.role);
-                    const UIcon = uBadge.icon;
-                    const isSelected = u.role === currentUser.role;
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => {
-                          onSwitchRole(u.role);
-                          setShowRoleMenu(false);
-                        }}
-                        className={`w-full px-4 py-2 text-left flex items-center gap-2.5 text-xs transition ${
-                          isSelected ? 'bg-indigo-950 text-indigo-300 font-semibold' : 'text-slate-200 hover:bg-slate-800'
-                        }`}
-                      >
-                        <span className={`p-1.5 rounded-lg ${uBadge.color}`}>
-                          <UIcon className="w-3.5 h-3.5" />
-                        </span>
-                        <div>
-                          <div className="font-semibold text-white">{uBadge.label}</div>
-                          <div className="text-[10px] text-slate-400">{u.fullName}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {availableUsers
+                    .filter((u, idx, arr) => {
+                      // Объединяем Director, Admin, Auditor в одного пользователя в меню
+                      if (['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(u.role)) {
+                        return arr.findIndex(x => ['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(x.role)) === idx;
+                      }
+                      return true;
+                    })
+                    .map(u => {
+                      const uBadge = getRoleBadge(u.role);
+                      const UIcon = uBadge.icon;
+                      const isSelected = ['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(u.role)
+                        ? ['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(currentUser.role)
+                        : u.role === currentUser.role;
+                      return (
+                        <button
+                          key={u.id}
+                          onClick={() => {
+                            onSwitchRole(u.role);
+                            setShowRoleMenu(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left flex items-center gap-2.5 text-xs transition ${
+                            isSelected ? 'bg-amber-950/60 border-l-2 border-amber-400 text-amber-300 font-semibold' : 'text-slate-200 hover:bg-slate-800'
+                          }`}
+                        >
+                          <span className={`p-1.5 rounded-lg ${uBadge.color}`}>
+                            <UIcon className="w-3.5 h-3.5" />
+                          </span>
+                          <div>
+                            <div className="font-semibold text-white">{uBadge.label}</div>
+                            <div className="text-[10px] text-slate-400">{u.fullName}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             )}

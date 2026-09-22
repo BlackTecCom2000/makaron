@@ -32,20 +32,24 @@ export interface AuthenticatedRequest extends Request {
 export function authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    // If no header, check if role simulation header exists for dev convenience
-    const simRole = req.headers['x-simulate-role'] as string;
-    if (simRole) {
-      const u = serverDb.users.find(x => x.role === simRole);
-      if (u) {
-        req.user = {
-          sub: u.id,
-          username: u.username,
-          role: u.role,
-          fullName: u.fullName,
-          pointId: u.pointId,
-          agentId: u.agentId
-        };
-        return next();
+    // If no header, check if role simulation header exists for dev convenience (strictly non-production)
+    if (process.env.NODE_ENV !== 'production') {
+      const simRole = req.headers['x-simulate-role'] as string;
+      if (simRole) {
+        // DIRECTOR, ADMIN, AUDITOR — это 1 человек с едиными правами
+        const isExec = ['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(simRole);
+        const u = serverDb.users.find(x => isExec ? ['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(x.role) : x.role === simRole);
+        if (u) {
+          req.user = {
+            sub: u.id,
+            username: u.username,
+            role: isExec ? 'ADMIN' : u.role,
+            fullName: u.fullName,
+            pointId: u.pointId,
+            agentId: u.agentId
+          };
+          return next();
+        }
       }
     }
     return res.status(401).json({
@@ -76,7 +80,15 @@ export function requireRole(allowedRoles: ServerUser['role'][]) {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role) && req.user.role !== 'ADMIN') {
+    // DIRECTOR, ADMIN, AUDITOR — это 1 человек (единое руководство с полным суверенным доступом)
+    const isExecutive = ['ADMIN', 'DIRECTOR', 'AUDITOR'].includes(req.user.role);
+    const requiresExecutive = allowedRoles.some(r => ['ADMIN', 'DIRECTOR', 'AUDITOR'].includes(r));
+
+    if (isExecutive && (requiresExecutive || req.user.role === 'ADMIN')) {
+      return next();
+    }
+
+    if (!allowedRoles.includes(req.user.role) && !isExecutive) {
       return res.status(403).json({
         success: false,
         error: {

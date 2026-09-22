@@ -257,14 +257,16 @@ export interface WorkerWorkLog {
   workerId: string;
   workerName: string;
   date: string; // YYYY-MM-DD
-  operationType: 'Комплектация' | 'Погрузка' | 'Разгрузка';
+  operationType: string;
   volumeKg: number;
   taskId?: string;
-  tariffRatePerKg: number; // например 0.15 руб/сом за кг
+  tariffRatePerKg: number; // устанавливается исключительно Главным Руководителем
   calculatedAmount: number; // Volume * Tariff
   recordedByUserId: string;
   recordedByName: string;
   createdAt: string;
+  isLocked?: boolean; // Блокировка от изменений Завскладом
+  lockedAt?: string;
 }
 
 export interface WorkerTariff {

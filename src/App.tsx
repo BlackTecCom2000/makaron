@@ -9,9 +9,7 @@ import { ZavskladView } from './views/ZavskladView';
 import { WorkerView } from './views/WorkerView';
 import { PickerView } from './views/PickerView';
 import { TaxsimotView } from './views/TaxsimotView';
-import { DirectorView } from './views/DirectorView';
-import { AdminView } from './views/AdminView';
-import { AuditorView } from './views/AuditorView';
+import { ExecutiveView } from './views/ExecutiveView';
 import { DigitalPassportModal } from './components/DigitalPassportModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 
@@ -32,7 +30,7 @@ export const App: React.FC = () => {
       const allOrders = await db.orders.toArray();
       setOrders(allOrders);
 
-      // По умолчанию открываем Точку (Режим 1) или Администратора
+      // По умолчанию открываем Точку (Режим 1) или Руководителя
       const defaultUser = allUsers.find(u => u.role === 'POINT') || allUsers[0];
       setCurrentUser(defaultUser);
       setIsReady(true);
@@ -41,6 +39,14 @@ export const App: React.FC = () => {
   }, []);
 
   const handleSwitchRole = (role: RoleCode) => {
+    // Если переход в DIRECTOR, ADMIN или AUDITOR — это 1 объединенный человек
+    if (['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(role)) {
+      const executiveUser = users.find(u => ['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(u.role));
+      if (executiveUser) {
+        setCurrentUser(executiveUser);
+        return;
+      }
+    }
     const targetUser = users.find(u => u.role === role);
     if (targetUser) {
       setCurrentUser(targetUser);
@@ -86,9 +92,9 @@ export const App: React.FC = () => {
         {currentUser.role === 'PICKER' && <PickerView currentUser={currentUser} />}
         {currentUser.role === 'WORKER' && <WorkerView currentUser={currentUser} />}
         {currentUser.role === 'TAXSIMOT' && <TaxsimotView currentUser={currentUser} />}
-        {currentUser.role === 'DIRECTOR' && <DirectorView currentUser={currentUser} />}
-        {currentUser.role === 'ADMIN' && <AdminView currentUser={currentUser} />}
-        {currentUser.role === 'AUDITOR' && <AuditorView currentUser={currentUser} />}
+        {(currentUser.role === 'DIRECTOR' || currentUser.role === 'ADMIN' || currentUser.role === 'AUDITOR') && (
+          <ExecutiveView currentUser={currentUser} />
+        )}
       </main>
 
       {/* Global Search Modal (Section 102) */}
@@ -117,15 +123,17 @@ export const App: React.FC = () => {
 
           <div className="flex items-center gap-1.5 flex-wrap justify-center">
             <span className="text-slate-500 text-[11px] mr-1">Быстрый переход роли:</span>
-            {(['POINT', 'ZAVSKLAD', 'PICKER', 'AGENT', 'SUPERVISOR', 'TAXSIMOT', 'WORKER', 'DIRECTOR', 'ADMIN', 'AUDITOR'] as RoleCode[]).map(r => (
+            {(['POINT', 'ZAVSKLAD', 'PICKER', 'AGENT', 'SUPERVISOR', 'TAXSIMOT', 'WORKER', 'DIRECTOR'] as RoleCode[]).map(r => (
               <button
                 key={r}
                 onClick={() => handleSwitchRole(r)}
-                className={`px-2 py-0.5 rounded text-[11px] font-bold transition ${
-                  currentUser.role === r ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                  (r === 'DIRECTOR' ? ['DIRECTOR', 'ADMIN', 'AUDITOR'].includes(currentUser.role) : currentUser.role === r)
+                    ? 'bg-amber-400 text-slate-950 shadow-md font-black'
+                    : 'bg-slate-800 text-slate-400 hover:text-white'
                 }`}
               >
-                {r}
+                {r === 'DIRECTOR' ? '👑 РУКОВОДИТЕЛЬ (ДИРЕКТОР / АДМИН / АУДИТОР)' : r}
               </button>
             ))}
           </div>

@@ -12,7 +12,9 @@ import {
   ShieldAlert,
   FileCheck,
   TrendingUp,
-  XCircle
+  XCircle,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 import type {
   User,
@@ -21,6 +23,7 @@ import type {
   Worker,
   WorkerAttendance,
   WorkerWorkLog,
+  WorkerTariff,
   LoadingOperation,
   PickingTask,
   AttendanceStatus
@@ -39,6 +42,8 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [attendance, setAttendance] = useState<WorkerAttendance[]>([]);
   const [workLogs, setWorkLogs] = useState<WorkerWorkLog[]>([]);
+  const [tariffs, setTariffs] = useState<WorkerTariff[]>([]);
+  const [selectedTariffId, setSelectedTariffId] = useState<string>('');
   const [loadingOps, setLoadingOps] = useState<LoadingOperation[]>([]);
   const [pickingTasks, setPickingTasks] = useState<PickingTask[]>([]);
   const [activeTab, setActiveTab] = useState<'orders' | 'picking' | 'workers' | 'loading' | 'stock'>('orders');
@@ -86,6 +91,12 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
 
     const ptList = await db.pickingTasks.reverse().toArray();
     setPickingTasks(ptList);
+
+    const tList = await db.workerTariffs.toArray();
+    setTariffs(tList);
+    if (tList.length > 0 && !selectedTariffId) {
+      setSelectedTariffId(tList[0].id);
+    }
   };
 
   // 1. Полное подтверждение заказа (100%, Вариант А)
@@ -267,7 +278,15 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
     const worker = workers.find(w => w.id === selectedWorkerId);
     if (!worker || workVolumeKg <= 0) return;
 
-    const tariff = 0.15; // 0.15 руб/сом за кг
+    // Тариф и расценка берутся СТРОГО из утвержденных Главным Руководителем
+    const activeTariff = tariffs.find(t => t.id === selectedTariffId) || tariffs[0] || {
+      id: 'tar-default',
+      operationType: 'Комплектация',
+      ratePerKg: 0.15,
+      description: 'Ставка сдельной оплаты: 0.15 сом за 1 кг'
+    };
+
+    const tariff = activeTariff.ratePerKg;
     const calculatedAmount = Number((workVolumeKg * tariff).toFixed(2));
 
     await db.workerWorkLogs.add({
@@ -275,13 +294,15 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
       workerId: worker.id,
       workerName: worker.fullName,
       date: '2026-09-22',
-      operationType: 'Комплектация',
+      operationType: activeTariff.operationType,
       volumeKg: workVolumeKg,
       tariffRatePerKg: tariff,
       calculatedAmount,
       recordedByUserId: currentUser.id,
       recordedByName: currentUser.fullName,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      isLocked: true,
+      lockedAt: new Date().toISOString()
     });
 
     await logAudit(
@@ -289,12 +310,12 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
       'WORK_LOG_RECORDED',
       'WORKER',
       worker.id,
-      `Зафиксирован объем комплектации: ${worker.fullName}, ${workVolumeKg} кг. Начислено по тарифу: ${calculatedAmount} сом`
+      `Зафиксирован объем работы: ${worker.fullName}, ${workVolumeKg} кг. Тариф Руководства: ${tariff} сом/кг, Сумма: ${calculatedAmount} сом. Запись заблокирована от изменений Завскладом.`
     );
 
     setWorkVolumeKg(150);
     loadData();
-    alert(`Выработка ${workVolumeKg} кг для ${worker.fullName} успешно зафиксирована!`);
+    alert(`Выработка ${workVolumeKg} кг для «${worker.fullName}» успешно зафиксирована!\nТариф: ${tariff} сом/кг (утвержден Главным Руководителем)\nСумма: ${calculatedAmount} сом\n\nВнимание: Данные заблокированы, дальнейшее изменение Завскладом запрещено.`);
   };
 
   // 5. Двухсторонняя сверка при погрузке (Завсклад, п. 16 ТЗ)
@@ -609,6 +630,13 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
                 </span>
               </div>
 
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                <span>
+                  <strong>Режим защиты от изменений:</strong> Все зафиксированные записи выработки заблокированы. Завсклад не имеет права редактировать объемы или суммы. Корректировка возможна только через Главного Руководителя.
+                </span>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">
@@ -616,8 +644,9 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
                       <th className="p-3">Работник</th>
                       <th className="p-3">Операция</th>
                       <th className="p-3 text-right">Объем (кг)</th>
-                      <th className="p-3 text-right">Тариф</th>
+                      <th className="p-3 text-right">Тариф (Руководитель)</th>
                       <th className="p-3 text-right">Сумма (сом)</th>
+                      <th className="p-3 text-center">Статус фиксации</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -626,8 +655,14 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
                         <td className="p-3 font-bold text-slate-900">{l.workerName}</td>
                         <td className="p-3 text-slate-600">{l.operationType}</td>
                         <td className="p-3 text-right font-black text-slate-900 font-mono">{l.volumeKg} кг</td>
-                        <td className="p-3 text-right text-slate-500">{l.tariffRatePerKg} /кг</td>
+                        <td className="p-3 text-right text-slate-500 font-mono">{l.tariffRatePerKg} /кг</td>
                         <td className="p-3 text-right font-bold text-emerald-700 font-mono">{l.calculatedAmount.toFixed(2)}</td>
+                        <td className="p-3 text-center">
+                          <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] inline-flex items-center gap-1 border border-slate-200">
+                            <Lock className="w-3 h-3 text-amber-600" />
+                            Зафиксировано
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -639,14 +674,23 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
           {/* Боковая форма добавления выработки (п. 12, 14 ТЗ) */}
           <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-5">
             <div>
-              <span className="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[10px] uppercase">
-                Сдельный расчет
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[10px] uppercase">
+                  Сдельный расчет
+                </span>
+                <span className="text-[10px] text-amber-300 flex items-center gap-1 font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                  Тарифы Руководителя
+                </span>
+              </div>
               <h3 className="text-base font-bold text-white mt-2">
                 Зафиксировать объем работы
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Расчет: Объем (кг) × Тариф (0.15 сом) = Сумма начисления
+                Расчет: Объем (кг) × Тариф ({(() => {
+                  const t = tariffs.find(x => x.id === selectedTariffId) || tariffs[0];
+                  return t ? t.ratePerKg : 0.15;
+                })()} сом) = Сумма начисления
               </p>
             </div>
 
@@ -665,6 +709,23 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
               </div>
 
               <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Вид технологической операции (Тариф Руководства):
+                </label>
+                <select
+                  value={selectedTariffId}
+                  onChange={e => setSelectedTariffId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-amber-300 focus:ring-2 focus:ring-amber-500"
+                >
+                  {tariffs.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.operationType} ({t.ratePerKg} сом/кг)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">Выполненный объем (кг):</label>
                 <input
                   type="number"
@@ -676,21 +737,46 @@ export const ZavskladView: React.FC<ZavskladViewProps> = ({ currentUser }) => {
                 />
               </div>
 
-              <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs space-y-1">
-                <div className="flex justify-between text-slate-400">
-                  <span>Тариф за 1 кг:</span>
-                  <span className="font-bold text-white">0.15 сом</span>
+              <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 text-xs space-y-1.5">
+                <div className="flex justify-between items-center text-slate-400">
+                  <span className="flex items-center gap-1 font-semibold">
+                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    Тариф за 1 кг (утвержден Руководством):
+                  </span>
+                  <span className="font-bold text-white font-mono">
+                    {(() => {
+                      const t = tariffs.find(x => x.id === selectedTariffId) || tariffs[0];
+                      return t ? t.ratePerKg : 0.15;
+                    })()} сом
+                  </span>
                 </div>
-                <div className="flex justify-between text-slate-200 border-t border-slate-700 pt-1 font-bold">
+                <div className="flex justify-between items-center text-slate-200 border-t border-slate-700 pt-1.5 font-bold">
                   <span>Расчетная сумма:</span>
-                  <span className="text-amber-400 font-mono text-sm">{(workVolumeKg * 0.15).toFixed(2)} сом</span>
+                  <span className="text-amber-400 font-mono text-base font-black">
+                    {(() => {
+                      const t = tariffs.find(x => x.id === selectedTariffId) || tariffs[0];
+                      const rate = t ? t.ratePerKg : 0.15;
+                      return (workVolumeKg * rate).toFixed(2);
+                    })()} сом
+                  </span>
                 </div>
+                <div className="text-[10px] text-slate-400 pt-0.5">
+                  Тарифы утверждаются Главным Руководителем • Завсклад не может менять тариф и сумму
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-200 flex items-start gap-2">
+                <Lock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Необратимая фиксация:</strong> после записи данные блокируются. Завсклад больше не сможет изменить или удалить эту запись.
+                </span>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-md transition"
+                className="w-full py-3 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider shadow-md transition flex items-center justify-center gap-2"
               >
+                <Lock className="w-4 h-4" />
                 Записать выработку в журнал
               </button>
             </form>

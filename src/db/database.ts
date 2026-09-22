@@ -113,20 +113,20 @@ export async function seedInitialData() {
   // 2. Пользователи всех 9 ролей
   const initialUsers: User[] = [
     {
-      id: 'user-admin',
-      username: 'admin',
-      fullName: 'Рустамов Джамшед (Администратор)',
-      phone: '+992 900 11 22 33',
-      role: 'ADMIN',
+      id: 'user-executive',
+      username: 'director',
+      fullName: 'Саидов Бахром (Руководитель: Директор / Админ / Аудитор)',
+      phone: '+992 900 00 00 01',
+      role: 'DIRECTOR',
       regionId: 'reg-all',
       isActive: true
     },
     {
-      id: 'user-director',
-      username: 'director',
-      fullName: 'Саидов Бахром (Генеральный директор)',
+      id: 'user-admin',
+      username: 'admin',
+      fullName: 'Саидов Бахром (Руководитель: Директор / Админ / Аудитор)',
       phone: '+992 900 00 00 01',
-      role: 'DIRECTOR',
+      role: 'ADMIN',
       regionId: 'reg-all',
       isActive: true
     },
@@ -201,8 +201,8 @@ export async function seedInitialData() {
     {
       id: 'user-auditor',
       username: 'auditor',
-      fullName: 'Хасанов Тимур (Главный аудитор)',
-      phone: '+992 900 88 99 00',
+      fullName: 'Саидов Бахром (Руководитель: Директор / Админ / Аудитор)',
+      phone: '+992 900 00 00 01',
       role: 'AUDITOR',
       regionId: 'reg-all',
       isActive: true

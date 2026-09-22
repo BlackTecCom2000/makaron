@@ -265,13 +265,18 @@ export interface ServerPieceworkLog {
   workerId: string;
   workerName: string;
   stationId: string;
-  operationType: 'PACKING' | 'SORTING' | 'LABELING' | 'PALLETIZING';
+  operationType: string;
   volumeKg: number;
   tariffPerKg: number;
   totalAmount: number;
   currency: string;
   shiftId?: string;
   createdAt: string;
+  isLocked?: boolean;
+  lockedAt?: string;
+  lockedBy?: string;
+  modifiedBy?: string;
+  modifiedAt?: string;
 }
 
 export interface ServerAuditLog {
@@ -923,7 +928,7 @@ export class MasterDatabase {
   private getInitialSeed(): ServerDatabaseSchema {
     return {
       users: [
-        { id: 'usr-admin', username: 'admin', passwordHash: 'admin123', fullName: 'Ином Султонов', role: 'ADMIN', phone: '+992900000001' },
+        { id: 'usr-admin', username: 'admin', passwordHash: 'admin123', fullName: 'Саидов Бахром (Руководитель: Директор / Админ / Аудитор)', role: 'ADMIN', phone: '+992900000001' },
         { id: 'usr-point-1', username: 'point_01', passwordHash: 'point123', fullName: 'Сайида Точка-1', role: 'POINT', pointId: 'pt-01', phone: '+992900000002' },
         { id: 'usr-agent-1', username: 'agent_bahrom', passwordHash: 'agent123', fullName: 'Бахром Умаров', role: 'AGENT', agentId: 'ag-01', phone: '+992900000003' },
         { id: 'usr-sup-1', username: 'supervisor_rustam', passwordHash: 'sup123', fullName: 'Рустам Исмоилов', role: 'SUPERVISOR', phone: '+992900000004' },
@@ -931,8 +936,8 @@ export class MasterDatabase {
         { id: 'usr-wrk-1', username: 'worker_davron', passwordHash: 'wrk123', fullName: 'Даврон Мирзоев', role: 'WORKER', phone: '+992900000006' },
         { id: 'usr-pck-1', username: 'picker_sobir', passwordHash: 'pck123', fullName: 'Собир Комплектовщик', role: 'PICKER', phone: '+992900000010' },
         { id: 'usr-drv-1', username: 'driver_farrukh', passwordHash: 'drv123', fullName: 'Фаррух Доставка', role: 'TAXSIMOT', phone: '+992900000007' },
-        { id: 'usr-dir-1', username: 'director_somon', passwordHash: 'dir123', fullName: 'Сомон Рахимов', role: 'DIRECTOR', phone: '+992900000008' },
-        { id: 'usr-aud-1', username: 'auditor_safia', passwordHash: 'aud123', fullName: 'Сафия Назарова', role: 'AUDITOR', phone: '+992900000009' }
+        { id: 'usr-dir-1', username: 'director', passwordHash: 'dir123', fullName: 'Саидов Бахром (Руководитель: Директор / Админ / Аудитор)', role: 'DIRECTOR', phone: '+992900000001' },
+        { id: 'usr-aud-1', username: 'auditor', passwordHash: 'aud123', fullName: 'Саидов Бахром (Руководитель: Директор / Админ / Аудитор)', role: 'AUDITOR', phone: '+992900000001' }
       ],
       orders: [
         {
@@ -1210,6 +1215,15 @@ export class MasterDatabase {
           id: 'rate-02',
           operationType: 'LOADING',
           ratePerKg: 0.10,
+          currency: 'TJS',
+          effectiveFrom: '2026-01-01',
+          version: 1,
+          isActive: true
+        },
+        {
+          id: 'rate-03',
+          operationType: 'Комплектация',
+          ratePerKg: 0.15,
           currency: 'TJS',
           effectiveFrom: '2026-01-01',
           version: 1,
