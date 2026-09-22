@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
     tags:
       - 'v*'
   workflow_dispatch:
@@ -29,7 +28,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci || npm install
+        run: npm install
 
       - name: Run Automated Tests (Vitest)
         run: npm test
@@ -50,12 +49,9 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
           else
             VERSION=$(node -p "require('./package.json').version")
-            TAG="v${VERSION}-build-${{ github.run_number }}"
-            echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "tag_name=v${VERSION}" >> $GITHUB_OUTPUT
           fi
 
       - name: Create or Update GitHub Release
@@ -80,6 +76,6 @@ jobs:
           files: |
             makaron-enterprise-bundle.zip
           draft: false
-          prerelease: ${{ steps.release_meta.outputs.is_prerelease == 'true' }}
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

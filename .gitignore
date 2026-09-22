@@ -13,6 +13,8 @@ coverage/
 
 # Temporary & Cache
 .tmp/
+.tmp_bundle/
+*.zip
 *.tmp
 *.log
 npm-debug.log*
