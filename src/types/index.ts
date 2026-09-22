@@ -439,3 +439,61 @@ export interface AppNotification {
   isRead: boolean;
   createdAt: string;
 }
+
+export interface CashAccount {
+  id: string;
+  code: string;
+  name: string;
+  openingBalance: number;
+  currentBalance: number;
+  currency: string;
+  isDefault: boolean;
+  updatedAt: string;
+}
+
+export interface CashTransaction {
+  id: string;
+  accountId: string;
+  type: 'INCOME' | 'EXPENSE';
+  category: string;
+  amount: number;
+  balanceAfter: number;
+  referenceEntity?: string;
+  referenceId?: string;
+  description: string;
+  authorUserId: string;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface ProductionOperation {
+  id: string;
+  batchNumber: string;
+  date: string;
+  shift: 'SHIFT_1' | 'SHIFT_2';
+  lineId: string;
+  productPackageId: string;
+  productName: string;
+  packageWeightKg: number;
+  quantity: number;
+  totalWeightKg: number;
+  workerIds: string[];
+  workerNames: string[];
+  status: 'IN_PROGRESS' | 'COMPLETED';
+  createdByUserId: string;
+  createdByName: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface Rate {
+  id: string;
+  operationType: string;
+  ratePerKg: number;
+  currency: string;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  version: number;
+  isActive: boolean;
+}
+

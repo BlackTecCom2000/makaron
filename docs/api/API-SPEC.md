@@ -498,6 +498,90 @@ API построено в соответствии со стандартами R
 
 ---
 
+### 3.7 Кассовый модуль (Cash Operations API)
+
+#### 3.7.1 Получение текущего баланса кассы
+`GET /api/v1/cash/balance`
+- **Роли:** `ADMIN`, `DIRECTOR`, `AUDITOR`
+- **Успешный ответ (200 OK):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "accountId": "cash-main-01",
+      "code": "CASH-MAIN-01",
+      "name": "Главная операционная касса BlackTecCom",
+      "openingBalance": 25000.00,
+      "totalIncome": 18500.00,
+      "totalExpense": 9200.00,
+      "currentBalance": 34300.00,
+      "currency": "TJS",
+      "updatedAt": "2026-09-22T21:00:00.000Z"
+    }
+  }
+  ```
+
+#### 3.7.2 Реестр кассовых операций
+`GET /api/v1/cash/transactions`
+- **Параметры запроса:** `limit=50`, `type=INCOME|EXPENSE`, `startDate`, `endDate`
+- **Успешный ответ (200 OK):** Массив проводок со связанными документами и контрольным остатком.
+
+#### 3.7.3 Проведение приходного/расходного кассового ордера
+`POST /api/v1/cash/transactions`
+- **Тело запроса:**
+  ```json
+  {
+    "type": "INCOME",
+    "category": "POINT_CASH_COLLECTION",
+    "amount": 2600.00,
+    "referenceEntity": "ORDER",
+    "referenceId": "ord-001",
+    "description": "Инкассация выручки с Собственной Точки №1 за заказ ORD-2026-001"
+  }
+  ```
+- **Серверные инварианты:**
+  - $Amount > 0$.
+  - При `type = 'EXPENSE'`: проверка $Amount \le CurrentBalance$, иначе HTTP 422 `INSUFFICIENT_FUNDS`.
+  - Автоматическая запись в `audit_logs` и генерация события WebSocket `CASH_TRANSACTION_CREATED`.
+
+---
+
+### 3.8 Производственный модуль со сменами (Production API)
+
+#### 3.8.1 Реестр производственных партий по сменам
+`GET /api/v1/production/operations`
+- **Параметры:** `date`, `shift=SHIFT_1|SHIFT_2`
+- **Успешный ответ (200 OK):** Массив выработанных партий, суммарный вес и список задействованных рабочих.
+
+#### 3.8.2 Регистрация выпуска партии готовой продукции
+`POST /api/v1/production/operations`
+- **Тело запроса:**
+  ```json
+  {
+    "date": "2026-09-23",
+    "shift": "SHIFT_1",
+    "lineId": "LINE-01",
+    "productPackageId": "prod-03",
+    "quantity": 50,
+    "workerIds": ["usr-wrk-1"]
+  }
+  ```
+- **Серверные инварианты:**
+  - Сервер находит фасовку: `prod-03` $\to$ `packageWeightKg = 23`.
+  - Расчет суммарного веса: $50 \times 23 = 1150$ кг.
+  - Автоматическое создание складского движения: `type = 'PRODUCTION_RECEIPT'`, `deltaQuantity = +50`.
+  - Увеличение физического и доступного остатка на складе на 50 мешков (1150 кг).
+
+#### 3.8.3 Версионируемые тарифы сдельной оплаты
+`GET /api/v1/production/rates` и `POST /api/v1/production/rates`
+- Управление версионируемыми ставками (например, `PACKING` = 0.35 TJS/кг) с датами вступления в силу.
+
+#### 3.8.4 Табель выходов персонала
+`GET /api/v1/production/attendance` и `POST /api/v1/production/attendance`
+- Фиксация статусов `PRESENT`, `SICK`, `VACATION`, `OFF`, `ABSENT`.
+
+---
+
 ## 4. Спецификация WebSockets (Real-time WSS Protocol)
 
 ### 4.1 Соединение и рукопожатие

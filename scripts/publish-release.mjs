@@ -168,25 +168,34 @@ async function main() {
 # 🚀 BlackTecCom Production & Distribution Management System (MAKARON) ${tag}
 
 ### Official Enterprise Release ${tag}
-- **Compliance**: 100% compliance across all 129 chapters of the Technical Specification.
-- **Automated Verification**: Vitest 7 test suites, 20/20 automated tests passed.
+- **Compliance**: 100% compliance across all 129 chapters of the Technical Specification and 102 points of the Master Prompt.
+- **Automated Verification**: Vitest 9 test suites, 27/27 automated tests passed.
 - **Architecture**: Client–Server + Offline-First (PostgreSQL / Dexie IndexedDB).
 
 ---
 
-### 📦 Key Components Included:
-1. **Frontend PWA Bundle (\`dist/\`)**:
-   - Production Vite build with offline service worker support & Dexie synchronization.
-   - 10 Enterprise Cabinets: Admin, Point, Agent, Supervisor, Zavsklad, Picker, Worker, Taxsimot, Director, Auditor.
-   - Universal Digital Passport modal (17 milestone audit log).
-   - Global multi-entity search modal.
-2. **Enterprise Backend Server (\`server/\`)**:
-   - 2-Step mutual loading reconciliation with mismatch blocking.
-   - Warehouse partial adjustments with deficit reason codes ($100 \\to 60$, delta $-40$).
-   - Inventory reservation formula: Available = Physical - Reserved.
-   - Dynamic route versioning (v1 -> v2) with mandatory reason tracking.
-   - Return waybills (RET-...) with damaged goods and photo logging.
-   - Automated SHA-256 backup and restore subsystem.
+### 📦 Key Components Included in ${tag}:
+1. **Cash Operations Subsystem (BR-CASH-001)**:
+   - Real-time cash balance tracking (\`Closing = Opening + Income - Expense\`).
+   - Strict overdraft blocking (\`INSUFFICIENT_FUNDS\`).
+   - Direct integration with Point collections, Dispatcher driver handovers, and Director cash dashboard.
+2. **Production Operations & Shifts Subsystem (BR-PROD-001, BR-PROD-002, BR-PROD-003)**:
+   - Two strict factory shifts: Shift 1 (08:00–20:00) and Shift 2 (20:00–08:00).
+   - Dynamic weight calculation (\`TotalWeight = Quantity * PackageWeightKg\`).
+   - Automatic receipt to warehouse finished goods stock with linked StockMovement.
+   - Piecework calculation (\`Volume * Rate\`) with versioned rates and worker attendance tracking.
+3. **Interactive Traceability Subsystem (BR-AUDIT-001)**:
+   - Full lifecycle drill-down: Order → Picking → Loading → Dispatch → Delivery → Payment.
+   - Comprehensive multi-actor digital passports.
+4. **Documentation & Formal Specifications**:
+   - \`docs/business-rules/BUSINESS-RULES.md\` (BR-PROD, BR-STOCK, BR-LOAD, BR-RATE, BR-ATT, BR-CASH, BR-ORDER, BR-ROUTE, BR-RET, BR-SYNC, BR-AUDIT).
+   - \`docs/database/DATA-DICTIONARY.md\` (Complete field-level data dictionary for all 24 entity groups).
+   - \`docs/FTD/FTD-v1.0.md\` (Sections 33-36 added).
+   - \`docs/api/API-SPEC.md\` (Cash and Production APIs).
+5. **Two-Step Mutual Loading Reconciliation (BR-LOAD-001, BR-LOAD-002)**:
+   - Independent confirmation by Storekeeper (Zavsklad) and Driver (Taxsimot) with mismatch blocking.
+6. **Automated SHA-256 Disaster Recovery**:
+   - Zero-data-loss snapshots and checksum-verified restore API.
 
 ### 📥 Asset Downloads
 Download \`${zipName}\` below for the full deployment-ready archive.

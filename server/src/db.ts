@@ -324,6 +324,76 @@ export interface ServerBackup {
   entityCounts: Record<string, number>;
 }
 
+export interface ServerCashAccount {
+  id: string;
+  code: string;
+  name: string;
+  openingBalance: number;
+  currentBalance: number;
+  currency: string;
+  isDefault: boolean;
+  updatedAt: string;
+}
+
+export interface ServerCashTransaction {
+  id: string;
+  accountId: string;
+  type: 'INCOME' | 'EXPENSE';
+  category: string;
+  amount: number;
+  balanceAfter: number;
+  referenceEntity?: string;
+  referenceId?: string;
+  description: string;
+  authorUserId: string;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface ServerProductionOperation {
+  id: string;
+  batchNumber: string;
+  date: string;
+  shift: 'SHIFT_1' | 'SHIFT_2';
+  lineId: string;
+  productPackageId: string;
+  productName: string;
+  packageWeightKg: number;
+  quantity: number;
+  totalWeightKg: number;
+  workerIds: string[];
+  workerNames: string[];
+  status: 'IN_PROGRESS' | 'COMPLETED';
+  createdByUserId: string;
+  createdByName: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface ServerRate {
+  id: string;
+  operationType: string;
+  ratePerKg: number;
+  currency: string;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  version: number;
+  isActive: boolean;
+}
+
+export interface ServerWorkerAttendance {
+  id: string;
+  workerId: string;
+  workerName: string;
+  date: string;
+  shift: 'SHIFT_1' | 'SHIFT_2';
+  status: 'PRESENT' | 'SICK' | 'VACATION' | 'OFF' | 'ABSENT';
+  reason?: string;
+  recordedByUserId: string;
+  recordedByName: string;
+  createdAt: string;
+}
+
 export interface ServerDatabaseSchema {
   users: ServerUser[];
   orders: ServerOrder[];
@@ -340,6 +410,11 @@ export interface ServerDatabaseSchema {
   auditLogs: ServerAuditLog[];
   syncMutations: SyncMutationRecord[];
   backups: ServerBackup[];
+  cashAccounts: ServerCashAccount[];
+  cashTransactions: ServerCashTransaction[];
+  productionOperations: ServerProductionOperation[];
+  rates: ServerRate[];
+  workerAttendance: ServerWorkerAttendance[];
 }
 
 export class MasterDatabase {
@@ -348,10 +423,16 @@ export class MasterDatabase {
   private backupDir: string;
   private state: ServerDatabaseSchema;
 
-  constructor() {
-    this.dataDir = path.resolve(process.cwd(), 'server', 'data');
-    this.backupDir = path.join(this.dataDir, 'backups');
-    this.dbFilePath = path.join(this.dataDir, 'master_db.json');
+  constructor(customDbPath?: string) {
+    if (customDbPath) {
+      this.dbFilePath = customDbPath;
+      this.dataDir = path.dirname(customDbPath);
+      this.backupDir = path.join(this.dataDir, 'backups');
+    } else {
+      this.dataDir = path.resolve(process.cwd(), 'server', 'data');
+      this.backupDir = path.join(this.dataDir, 'backups');
+      this.dbFilePath = path.join(this.dataDir, 'master_db.json');
+    }
     if (!fs.existsSync(this.dataDir)) {
       fs.mkdirSync(this.dataDir, { recursive: true });
     }
@@ -391,7 +472,12 @@ export class MasterDatabase {
           notifications: parsed.notifications || initial.notifications,
           auditLogs: parsed.auditLogs || initial.auditLogs,
           syncMutations: parsed.syncMutations || [],
-          backups: parsed.backups || []
+          backups: parsed.backups || [],
+          cashAccounts: parsed.cashAccounts || initial.cashAccounts,
+          cashTransactions: parsed.cashTransactions || initial.cashTransactions,
+          productionOperations: parsed.productionOperations || initial.productionOperations,
+          rates: parsed.rates || initial.rates,
+          workerAttendance: parsed.workerAttendance || initial.workerAttendance
         };
       } catch (e) {
         console.error('[DB] Failed reading db file, re-initializing', e);
@@ -403,9 +489,18 @@ export class MasterDatabase {
   }
 
   private saveDirect(data: ServerDatabaseSchema) {
-    const tempFile = `${this.dbFilePath}.${Date.now()}.tmp`;
+    const tempFile = `${this.dbFilePath}.${Date.now()}-${Math.random().toString(36).substring(2, 6)}.tmp`;
     fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-    fs.renameSync(tempFile, this.dbFilePath);
+    try {
+      fs.renameSync(tempFile, this.dbFilePath);
+    } catch (e: any) {
+      if (e.code === 'EPERM' || e.code === 'EBUSY') {
+        fs.copyFileSync(tempFile, this.dbFilePath);
+        try { fs.unlinkSync(tempFile); } catch {}
+      } else {
+        throw e;
+      }
+    }
   }
 
   public persist() {
@@ -428,6 +523,11 @@ export class MasterDatabase {
   public get auditLogs(): ServerAuditLog[] { return this.state.auditLogs; }
   public get syncMutations(): SyncMutationRecord[] { return this.state.syncMutations; }
   public get backups(): ServerBackup[] { return this.state.backups; }
+  public get cashAccounts(): ServerCashAccount[] { return this.state.cashAccounts; }
+  public get cashTransactions(): ServerCashTransaction[] { return this.state.cashTransactions; }
+  public get productionOperations(): ServerProductionOperation[] { return this.state.productionOperations; }
+  public get rates(): ServerRate[] { return this.state.rates; }
+  public get workerAttendance(): ServerWorkerAttendance[] { return this.state.workerAttendance; }
 
   // Stock Management with strict reservation formula: available = physical - reserved
   public reserveStock(warehouseId: string, productPackageId: string, quantity: number, referenceId: string, actor: { id: string; name: string }) {
@@ -586,6 +686,240 @@ export class MasterDatabase {
     return notif;
   }
 
+  // Cash Operations: BR-CASH-001 Closing = Opening + Income - Expense & Overdraft protection
+  public recordCashTransaction(data: {
+    accountId?: string;
+    type: 'INCOME' | 'EXPENSE';
+    category: string;
+    amount: number;
+    referenceEntity?: string;
+    referenceId?: string;
+    description: string;
+    authorUserId: string;
+    authorName: string;
+  }): ServerCashTransaction {
+    if (data.amount <= 0) {
+      throw new Error('Сумма кассовой операции должна быть строго больше нуля');
+    }
+
+    const account = data.accountId
+      ? this.state.cashAccounts.find(a => a.id === data.accountId)
+      : this.state.cashAccounts.find(a => a.isDefault) || this.state.cashAccounts[0];
+
+    if (!account) {
+      throw new Error('Кассовый счет не найден в системе');
+    }
+
+    if (data.type === 'EXPENSE' && account.currentBalance < data.amount) {
+      throw new Error(`INSUFFICIENT_FUNDS: Недостаточно средств в кассе ${account.name}. Доступно: ${account.currentBalance} ${account.currency}, запрошено: ${data.amount} ${account.currency}`);
+    }
+
+    if (data.type === 'INCOME') {
+      account.currentBalance = Number((account.currentBalance + data.amount).toFixed(2));
+    } else {
+      account.currentBalance = Number((account.currentBalance - data.amount).toFixed(2));
+    }
+    account.updatedAt = new Date().toISOString();
+
+    const transaction: ServerCashTransaction = {
+      id: `ctx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      accountId: account.id,
+      type: data.type,
+      category: data.category,
+      amount: data.amount,
+      balanceAfter: account.currentBalance,
+      referenceEntity: data.referenceEntity,
+      referenceId: data.referenceId,
+      description: data.description,
+      authorUserId: data.authorUserId,
+      authorName: data.authorName,
+      createdAt: new Date().toISOString()
+    };
+
+    this.state.cashTransactions.unshift(transaction);
+
+    this.state.auditLogs.unshift({
+      id: `aud-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      actorId: data.authorUserId,
+      actorName: data.authorName,
+      actorRole: 'CASHIER',
+      entityType: 'CASH',
+      entityId: transaction.id,
+      action: data.type === 'INCOME' ? 'RECORD_CASH_INCOME' : 'RECORD_CASH_EXPENSE',
+      details: `Кассовая операция ${transaction.type}: ${data.amount} ${account.currency} [${data.category}]. Остаток после: ${account.currentBalance}`
+    });
+
+    this.persist();
+    return transaction;
+  }
+
+  // Production Operations: BR-PROD-001 total weight = quantity * package_weight & BR-PROD-003 auto stock receipt
+  public recordProductionBatch(data: {
+    date: string;
+    shift: 'SHIFT_1' | 'SHIFT_2';
+    lineId: string;
+    productPackageId: string;
+    productName: string;
+    packageWeightKg: number;
+    quantity: number;
+    workerIds: string[];
+    workerNames: string[];
+    createdByUserId: string;
+    createdByName: string;
+  }): ServerProductionOperation {
+    if (data.quantity <= 0) {
+      throw new Error('Количество выработанных упаковок должно быть строго больше нуля');
+    }
+    if (data.packageWeightKg <= 0) {
+      throw new Error('Вес упаковки должен быть строго больше нуля');
+    }
+
+    const totalWeightKg = Number((data.quantity * data.packageWeightKg).toFixed(2));
+    const batchNumber = `BATCH-${data.date.replace(/-/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    const op: ServerProductionOperation = {
+      id: `prod-op-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      batchNumber,
+      date: data.date,
+      shift: data.shift,
+      lineId: data.lineId,
+      productPackageId: data.productPackageId,
+      productName: data.productName,
+      packageWeightKg: data.packageWeightKg,
+      quantity: data.quantity,
+      totalWeightKg,
+      workerIds: data.workerIds,
+      workerNames: data.workerNames,
+      status: 'COMPLETED',
+      createdByUserId: data.createdByUserId,
+      createdByName: data.createdByName,
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString()
+    };
+
+    this.state.productionOperations.unshift(op);
+
+    // Auto-receipt to warehouse stock (BR-PROD-003)
+    let stockItem = this.state.stock.find(s => s.productPackageId === data.productPackageId);
+    if (stockItem) {
+      stockItem.quantityPhysical += data.quantity;
+      stockItem.availableQuantity = stockItem.quantityPhysical - stockItem.quantityReserved;
+      stockItem.updatedAt = new Date().toISOString();
+    } else {
+      stockItem = {
+        id: `stk-${Date.now()}`,
+        warehouseId: 'wh-main-01',
+        productPackageId: data.productPackageId,
+        productName: data.productName,
+        packageWeightKg: data.packageWeightKg,
+        quantityPhysical: data.quantity,
+        quantityReserved: 0,
+        availableQuantity: data.quantity,
+        minCriticalLevel: 50,
+        updatedAt: new Date().toISOString()
+      };
+      this.state.stock.push(stockItem);
+    }
+
+    const movement: ServerStockMovement = {
+      id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      warehouseId: stockItem.warehouseId,
+      productPackageId: data.productPackageId,
+      productName: data.productName,
+      type: 'PRODUCTION_RECEIPT',
+      deltaQuantity: data.quantity,
+      balanceAfter: stockItem.quantityPhysical,
+      referenceId: op.id,
+      actorId: data.createdByUserId,
+      actorName: data.createdByName,
+      createdAt: new Date().toISOString()
+    };
+    this.state.stockMovements.unshift(movement);
+
+    this.state.auditLogs.unshift({
+      id: `aud-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      actorId: data.createdByUserId,
+      actorName: data.createdByName,
+      actorRole: 'PRODUCTION_MASTER',
+      entityType: 'PRODUCTION',
+      entityId: op.id,
+      action: 'COMPLETE_PRODUCTION_BATCH',
+      details: `Выпуск партии ${batchNumber} (${data.shift}): ${data.quantity} уп. (${totalWeightKg} кг) ${data.productName}. Оприходовано на склад.`
+    });
+
+    this.persist();
+    return op;
+  }
+
+  // Attendance recording: BR-ATT-001
+  public recordAttendance(data: {
+    workerId: string;
+    workerName: string;
+    date: string;
+    shift: 'SHIFT_1' | 'SHIFT_2';
+    status: 'PRESENT' | 'SICK' | 'VACATION' | 'OFF' | 'ABSENT';
+    reason?: string;
+    recordedByUserId: string;
+    recordedByName: string;
+  }): ServerWorkerAttendance {
+    const existingIndex = this.state.workerAttendance.findIndex(
+      a => a.workerId === data.workerId && a.date === data.date && a.shift === data.shift
+    );
+    const rec: ServerWorkerAttendance = {
+      id: existingIndex >= 0 ? this.state.workerAttendance[existingIndex].id : `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      workerId: data.workerId,
+      workerName: data.workerName,
+      date: data.date,
+      shift: data.shift,
+      status: data.status,
+      reason: data.reason,
+      recordedByUserId: data.recordedByUserId,
+      recordedByName: data.recordedByName,
+      createdAt: new Date().toISOString()
+    };
+
+    if (existingIndex >= 0) {
+      this.state.workerAttendance[existingIndex] = rec;
+    } else {
+      this.state.workerAttendance.unshift(rec);
+    }
+    this.persist();
+    return rec;
+  }
+
+  // Rates versioning: BR-RATE-001
+  public createRate(data: {
+    operationType: string;
+    ratePerKg: number;
+    currency?: string;
+    effectiveFrom: string;
+  }): ServerRate {
+    const existing = this.state.rates.filter(r => r.operationType === data.operationType);
+    const version = existing.length + 1;
+    // Deactivate previous active rate
+    for (const r of existing) {
+      if (r.isActive) {
+        r.isActive = false;
+        r.effectiveTo = data.effectiveFrom;
+      }
+    }
+
+    const newRate: ServerRate = {
+      id: `rate-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      operationType: data.operationType,
+      ratePerKg: data.ratePerKg,
+      currency: data.currency || 'TJS',
+      effectiveFrom: data.effectiveFrom,
+      version,
+      isActive: true
+    };
+    this.state.rates.unshift(newRate);
+    this.persist();
+    return newRate;
+  }
+
   private getInitialSeed(): ServerDatabaseSchema {
     return {
       users: [
@@ -621,28 +955,71 @@ export class MasterDatabase {
         }
       ],
       warehouseAdjustments: [],
-      orderVersions: [
+      orderVersions: [],
+      stock: [
         {
-          id: 'ver-ord-001-1',
-          orderId: 'ord-001',
-          versionNumber: 1,
-          changedByUserId: 'usr-point-1',
-          changedByName: 'Сайида Точка-1',
-          changedByRole: 'POINT',
-          changeType: 'INITIAL_CREATION',
-          reasonCategory: 'REGULAR_ORDER',
-          snapshot: { totalWeightKg: 500.0, totalSum: 6850.0 },
-          createdAt: new Date().toISOString()
+          id: 'stk-01',
+          warehouseId: 'wh-main-01',
+          productPackageId: 'prod-01',
+          productName: 'Спагетти Экстра 400г',
+          packageWeightKg: 0.40,
+          quantityPhysical: 5000,
+          quantityReserved: 500,
+          availableQuantity: 4500,
+          minCriticalLevel: 500,
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'stk-02',
+          warehouseId: 'wh-main-01',
+          productPackageId: 'prod-02',
+          productName: 'Рожки Традиционные 1кг',
+          packageWeightKg: 1.00,
+          quantityPhysical: 3000,
+          quantityReserved: 300,
+          availableQuantity: 2700,
+          minCriticalLevel: 300,
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'stk-03',
+          warehouseId: 'wh-main-01',
+          productPackageId: 'prod-03',
+          productName: 'Вермишель Тонкая 23кг',
+          packageWeightKg: 23.00,
+          quantityPhysical: 400,
+          quantityReserved: 0,
+          availableQuantity: 400,
+          minCriticalLevel: 50,
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'stk-04',
+          warehouseId: 'wh-main-01',
+          productPackageId: 'prod-04',
+          productName: 'Макароны Перо 23кг',
+          packageWeightKg: 23.00,
+          quantityPhysical: 600,
+          quantityReserved: 0,
+          availableQuantity: 600,
+          minCriticalLevel: 50,
+          updatedAt: new Date().toISOString()
         }
       ],
-      stock: [
-        { id: 'stk-01', warehouseId: 'wh-main-01', productPackageId: 'prod-01', productName: 'Спагетти Экстра 400г', packageWeightKg: 0.40, quantityPhysical: 5000, quantityReserved: 500, availableQuantity: 4500, minCriticalLevel: 500, updatedAt: new Date().toISOString() },
-        { id: 'stk-02', warehouseId: 'wh-main-01', productPackageId: 'prod-02', productName: 'Рожки Традиционные 1кг', packageWeightKg: 1.00, quantityPhysical: 3000, quantityReserved: 300, availableQuantity: 2700, minCriticalLevel: 300, updatedAt: new Date().toISOString() },
-        { id: 'stk-03', warehouseId: 'wh-main-01', productPackageId: 'prod-03', productName: 'Вермишель Тонкая 23кг', packageWeightKg: 23.00, quantityPhysical: 400, quantityReserved: 0, availableQuantity: 400, minCriticalLevel: 50, updatedAt: new Date().toISOString() },
-        { id: 'stk-04', warehouseId: 'wh-main-01', productPackageId: 'prod-04', productName: 'Макароны Перо 23кг', packageWeightKg: 23.00, quantityPhysical: 600, quantityReserved: 0, availableQuantity: 600, minCriticalLevel: 50, updatedAt: new Date().toISOString() }
-      ],
       stockMovements: [
-        { id: 'mov-init-1', warehouseId: 'wh-main-01', productPackageId: 'prod-01', productName: 'Спагетти Экстра 400г', type: 'PRODUCTION_RECEIPT', deltaQuantity: 5000, balanceAfter: 5000, referenceId: 'BATCH-2026-001', actorId: 'usr-admin', actorName: 'Система', createdAt: new Date().toISOString() }
+        {
+          id: 'mov-init-1',
+          warehouseId: 'wh-main-01',
+          productPackageId: 'prod-01',
+          productName: 'Спагетти Экстра 400г',
+          type: 'PRODUCTION_RECEIPT',
+          deltaQuantity: 5000,
+          balanceAfter: 5000,
+          referenceId: 'BATCH-2026-001',
+          actorId: 'usr-admin',
+          actorName: 'Система',
+          createdAt: new Date().toISOString()
+        }
       ],
       pickingTasks: [
         {
@@ -655,8 +1032,8 @@ export class MasterDatabase {
           assignedWorkerId: 'usr-pck-1',
           assignedWorkerName: 'Собир Комплектовщик',
           items: [
-            { id: 'pi-1', productId: 'prod-01', productName: 'Спагетти Экстра 400г', packageWeightKg: 0.4, requiredQty: 500, pickedQty: 500, isCompleted: true },
-            { id: 'pi-2', productId: 'prod-02', productName: 'Рожки Традиционные 1кг', packageWeightKg: 1.0, requiredQty: 300, pickedQty: 300, isCompleted: true }
+            { id: 'pi-1', productId: 'prod-01', productName: 'Спагетти Экстра 400г', packageWeightKg: 0.40, requiredQty: 500, pickedQty: 500, isCompleted: true },
+            { id: 'pi-2', productId: 'prod-02', productName: 'Рожки Традиционные 1кг', packageWeightKg: 1.00, requiredQty: 300, pickedQty: 300, isCompleted: true }
           ],
           createdAt: new Date().toISOString(),
           completedAt: new Date().toISOString()
@@ -771,7 +1148,87 @@ export class MasterDatabase {
         }
       ],
       syncMutations: [],
-      backups: []
+      backups: [],
+      cashAccounts: [
+        {
+          id: 'cash-main-01',
+          code: 'CASH-MAIN-01',
+          name: 'Главная операционная касса BlackTecCom',
+          openingBalance: 50000.00,
+          currentBalance: 50000.00,
+          currency: 'TJS',
+          isDefault: true,
+          updatedAt: new Date().toISOString()
+        }
+      ],
+      cashTransactions: [
+        {
+          id: 'ctx-init-1',
+          accountId: 'cash-main-01',
+          type: 'INCOME',
+          category: 'OPENING_BALANCE',
+          amount: 50000.00,
+          balanceAfter: 50000.00,
+          description: 'Ввод начального операционного остатка кассы',
+          authorUserId: 'usr-admin',
+          authorName: 'Ином Султонов',
+          createdAt: new Date().toISOString()
+        }
+      ],
+      productionOperations: [
+        {
+          id: 'prod-op-001',
+          batchNumber: 'BATCH-2026-001',
+          date: new Date().toISOString().split('T')[0],
+          shift: 'SHIFT_1',
+          lineId: 'LINE-01',
+          productPackageId: 'prod-03',
+          productName: 'Вермишель Тонкая 23кг',
+          packageWeightKg: 23.00,
+          quantity: 100,
+          totalWeightKg: 2300.00,
+          workerIds: ['usr-wrk-1'],
+          workerNames: ['Даврон Мирзоев'],
+          status: 'COMPLETED',
+          createdByUserId: 'usr-admin',
+          createdByName: 'Ином Султонов',
+          createdAt: new Date().toISOString(),
+          completedAt: new Date().toISOString()
+        }
+      ],
+      rates: [
+        {
+          id: 'rate-01',
+          operationType: 'PACKING',
+          ratePerKg: 0.35,
+          currency: 'TJS',
+          effectiveFrom: '2026-01-01',
+          version: 1,
+          isActive: true
+        },
+        {
+          id: 'rate-02',
+          operationType: 'LOADING',
+          ratePerKg: 0.10,
+          currency: 'TJS',
+          effectiveFrom: '2026-01-01',
+          version: 1,
+          isActive: true
+        }
+      ],
+      workerAttendance: [
+        {
+          id: 'att-001',
+          workerId: 'usr-wrk-1',
+          workerName: 'Даврон Мирзоев',
+          date: new Date().toISOString().split('T')[0],
+          shift: 'SHIFT_1',
+          status: 'PRESENT',
+          recordedByUserId: 'usr-zav-1',
+          recordedByName: 'Алим Кодиров',
+          createdAt: new Date().toISOString()
+        }
+      ]
     };
   }
 }

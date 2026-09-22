@@ -210,11 +210,11 @@
       "productPackageId": "prod-03",
       "productName": "Вермишель Тонкая 23кг",
       "packageWeightKg": 23,
-      "quantityPhysical": 400,
+      "quantityPhysical": 450,
       "quantityReserved": 0,
-      "availableQuantity": 400,
+      "availableQuantity": 450,
       "minCriticalLevel": 50,
-      "updatedAt": "2026-09-22T20:39:00.410Z"
+      "updatedAt": "2026-09-22T21:04:54.683Z"
     },
     {
       "id": "stk-04",
@@ -230,6 +230,19 @@
     }
   ],
   "stockMovements": [
+    {
+      "id": "mov-1790111094683-omiv",
+      "warehouseId": "wh-main-01",
+      "productPackageId": "prod-03",
+      "productName": "Вермишель Тонкая 23кг",
+      "type": "PRODUCTION_RECEIPT",
+      "deltaQuantity": 50,
+      "balanceAfter": 450,
+      "referenceId": "prod-op-1790111094683-5plp",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "createdAt": "2026-09-22T21:04:54.683Z"
+    },
     {
       "id": "mov-1790109546662-u3aw",
       "warehouseId": "wh-main-01",
@@ -514,6 +527,83 @@
   ],
   "auditLogs": [
     {
+      "id": "aud-1790111257640-u018",
+      "timestamp": "2026-09-22T21:07:37.640Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "SYSTEM",
+      "entityId": "bck-1790111257639",
+      "action": "CREATE_BACKUP",
+      "details": "Создана резервная копия makaron_backup_2026-09-22T21-07-37-638Z.json (30841 байт). Checksum SHA256: 90ed3516b02d..."
+    },
+    {
+      "id": "aud-1790111099352-o9jn",
+      "timestamp": "2026-09-22T21:04:59.353Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "USER",
+      "entityId": "usr-admin",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790111094683-9vhk",
+      "timestamp": "2026-09-22T21:04:54.683Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "PRODUCTION_MASTER",
+      "entityType": "PRODUCTION",
+      "entityId": "prod-op-1790111094683-5plp",
+      "action": "COMPLETE_PRODUCTION_BATCH",
+      "details": "Выпуск партии BATCH-20260923-GVMW (SHIFT_1): 50 уп. (1150 кг) Вермишель Тонкая 23кг. Оприходовано на склад."
+    },
+    {
+      "id": "aud-1790111094678-vdwe",
+      "timestamp": "2026-09-22T21:04:54.678Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "CASHIER",
+      "entityType": "CASH",
+      "entityId": "ctx-1790111094678-yjnx",
+      "action": "RECORD_CASH_INCOME",
+      "details": "Кассовая операция INCOME: 2500 TJS [POINT_COLLECTION]. Остаток после: 52500"
+    },
+    {
+      "id": "aud-1790111094644-o862",
+      "timestamp": "2026-09-22T21:04:54.644Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "USER",
+      "entityId": "usr-admin",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790111089701-p2hk",
+      "timestamp": "2026-09-22T21:04:49.701Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "USER",
+      "entityId": "usr-admin",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
+      "id": "aud-1790111085957-u7lw",
+      "timestamp": "2026-09-22T21:04:45.957Z",
+      "actorId": "usr-admin",
+      "actorName": "Ином Султонов",
+      "actorRole": "ADMIN",
+      "entityType": "USER",
+      "entityId": "usr-admin",
+      "action": "LOGIN",
+      "details": "User logged in from ::1"
+    },
+    {
       "id": "aud-1790109595643-86y8",
       "timestamp": "2026-09-22T20:39:55.643Z",
       "actorId": "usr-drv-1",
@@ -758,6 +848,22 @@
   ],
   "backups": [
     {
+      "id": "bck-1790111257639",
+      "filename": "makaron_backup_2026-09-22T21-07-37-638Z.json",
+      "timestamp": "2026-09-22T21:07:37.638Z",
+      "sizeBytes": 30841,
+      "checksum": "90ed3516b02d538ee307f6149b72b5b2ec4ace581c2b75143a30d839d859d10e",
+      "description": "Pre-release v1.2.0 automated system snapshot",
+      "entityCounts": {
+        "users": 10,
+        "orders": 1,
+        "stock": 4,
+        "routes": 1,
+        "loadings": 1,
+        "auditLogs": 27
+      }
+    },
+    {
       "id": "bck-1790109546672",
       "filename": "makaron_backup_2026-09-22T20-39-06-672Z.json",
       "timestamp": "2026-09-22T20:39:06.672Z",
@@ -772,6 +878,123 @@
         "loadings": 1,
         "auditLogs": 14
       }
+    }
+  ],
+  "cashAccounts": [
+    {
+      "id": "cash-main-01",
+      "code": "CASH-MAIN-01",
+      "name": "Главная операционная касса BlackTecCom",
+      "openingBalance": 50000,
+      "currentBalance": 52500,
+      "currency": "TJS",
+      "isDefault": true,
+      "updatedAt": "2026-09-22T21:04:54.678Z"
+    }
+  ],
+  "cashTransactions": [
+    {
+      "id": "ctx-1790111094678-yjnx",
+      "accountId": "cash-main-01",
+      "type": "INCOME",
+      "category": "POINT_COLLECTION",
+      "amount": 2500,
+      "balanceAfter": 52500,
+      "description": "?????????? ????? ?1",
+      "authorUserId": "usr-admin",
+      "authorName": "Ином Султонов",
+      "createdAt": "2026-09-22T21:04:54.678Z"
+    },
+    {
+      "id": "ctx-init-1",
+      "accountId": "cash-main-01",
+      "type": "INCOME",
+      "category": "OPENING_BALANCE",
+      "amount": 50000,
+      "balanceAfter": 50000,
+      "description": "Ввод начального операционного остатка кассы",
+      "authorUserId": "usr-admin",
+      "authorName": "Ином Султонов",
+      "createdAt": "2026-09-22T21:04:32.469Z"
+    }
+  ],
+  "productionOperations": [
+    {
+      "id": "prod-op-1790111094683-5plp",
+      "batchNumber": "BATCH-20260923-GVMW",
+      "date": "2026-09-23",
+      "shift": "SHIFT_1",
+      "lineId": "LINE-01",
+      "productPackageId": "prod-03",
+      "productName": "Вермишель Тонкая 23кг",
+      "packageWeightKg": 23,
+      "quantity": 50,
+      "totalWeightKg": 1150,
+      "workerIds": [
+        "usr-wrk-1"
+      ],
+      "workerNames": [],
+      "status": "COMPLETED",
+      "createdByUserId": "usr-admin",
+      "createdByName": "Ином Султонов",
+      "createdAt": "2026-09-22T21:04:54.683Z",
+      "completedAt": "2026-09-22T21:04:54.683Z"
+    },
+    {
+      "id": "prod-op-001",
+      "batchNumber": "BATCH-2026-001",
+      "date": "2026-09-22",
+      "shift": "SHIFT_1",
+      "lineId": "LINE-01",
+      "productPackageId": "prod-03",
+      "productName": "Вермишель Тонкая 23кг",
+      "packageWeightKg": 23,
+      "quantity": 100,
+      "totalWeightKg": 2300,
+      "workerIds": [
+        "usr-wrk-1"
+      ],
+      "workerNames": [
+        "Даврон Мирзоев"
+      ],
+      "status": "COMPLETED",
+      "createdByUserId": "usr-admin",
+      "createdByName": "Ином Султонов",
+      "createdAt": "2026-09-22T21:04:32.469Z",
+      "completedAt": "2026-09-22T21:04:32.469Z"
+    }
+  ],
+  "rates": [
+    {
+      "id": "rate-01",
+      "operationType": "PACKING",
+      "ratePerKg": 0.35,
+      "currency": "TJS",
+      "effectiveFrom": "2026-01-01",
+      "version": 1,
+      "isActive": true
+    },
+    {
+      "id": "rate-02",
+      "operationType": "LOADING",
+      "ratePerKg": 0.1,
+      "currency": "TJS",
+      "effectiveFrom": "2026-01-01",
+      "version": 1,
+      "isActive": true
+    }
+  ],
+  "workerAttendance": [
+    {
+      "id": "att-001",
+      "workerId": "usr-wrk-1",
+      "workerName": "Даврон Мирзоев",
+      "date": "2026-09-22",
+      "shift": "SHIFT_1",
+      "status": "PRESENT",
+      "recordedByUserId": "usr-zav-1",
+      "recordedByName": "Алим Кодиров",
+      "createdAt": "2026-09-22T21:04:32.469Z"
     }
   ]
 }

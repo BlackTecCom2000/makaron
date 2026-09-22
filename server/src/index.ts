@@ -4,7 +4,8 @@ import cors from 'cors';
 import authRoutes from './routes/auth';
 import ordersRoutes from './routes/orders';
 import loadingsRoutes from './routes/loadings';
-import pieceworkRoutes from './routes/piecework';
+import productionRoutes from './routes/production';
+import cashRoutes from './routes/cash';
 import syncRoutes from './routes/sync';
 import auditRoutes from './routes/audit';
 import warehouseRoutes from './routes/warehouse';
@@ -42,7 +43,9 @@ app.get(['/api/v1/health', '/api/health'], (req, res) => {
       stockItemsCount: serverDb.stock.length,
       routesCount: serverDb.routes.length,
       returnsCount: serverDb.returns.length,
-      auditRecordsCount: serverDb.auditLogs.length
+      auditRecordsCount: serverDb.auditLogs.length,
+      cashTransactionsCount: serverDb.cashTransactions.length,
+      productionOperationsCount: serverDb.productionOperations.length
     }
   });
 });
@@ -103,7 +106,8 @@ app.use('/api/v1/picking', pickingRoutes);
 app.use('/api/v1/routes', routesRoutes);
 app.use('/api/v1/loadings', loadingsRoutes);
 app.use('/api/v1/deliveries', deliveriesRoutes);
-app.use('/api/v1/production', pieceworkRoutes);
+app.use('/api/v1/production', productionRoutes);
+app.use('/api/v1/cash', cashRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/sync', syncRoutes);
 app.use('/api/v1/audit', auditRoutes);
@@ -117,6 +121,8 @@ app.use('/api/picking', pickingRoutes);
 app.use('/api/routes', routesRoutes);
 app.use('/api/loading', loadingsRoutes);
 app.use('/api/deliveries', deliveriesRoutes);
+app.use('/api/production', productionRoutes);
+app.use('/api/cash', cashRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/audit', auditRoutes);

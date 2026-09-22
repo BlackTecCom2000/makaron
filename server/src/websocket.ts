@@ -58,3 +58,20 @@ export function broadcastEvent(event: string, data: any) {
     }
   }
 }
+
+export function broadcastWsEvent(channel: string, event: string, data: any) {
+  if (!wss) return;
+  const payload = JSON.stringify({
+    channel,
+    event,
+    data,
+    timestamp: new Date().toISOString()
+  });
+
+  for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  }
+}
+
